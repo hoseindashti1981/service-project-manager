@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 export function RootLayout() {
   const [open, setOpen] = useState(false)
-  const links = [['/', 'داشبورد'], ['/customers', 'مشتری‌ها'], ['/projects', 'پروژه‌ها'], ['/activities/today', 'فعالیت امروز'], ['/finance', 'مالی']] as const
+  const links = [['/', 'داشبورد'], ['/customers', 'مشتری‌ها'], ['/projects', 'پروژه‌ها'], ['/activities/today', 'فعالیت امروز'], ['/finance', 'مالی'], ['/reports', 'گزارش‌ها']] as const
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="bg-white border-b border-slate-200 px-4 py-3">
