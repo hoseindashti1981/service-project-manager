@@ -6,6 +6,7 @@ import type { Customer } from '@/domain/customer/types'
 import type { Project } from '@/domain/project/types'
 import type { Invoice, Payment, Quotation } from '@/domain/finance/types'
 import { formatMoney } from '@/lib/money'
+import { downloadDocumentPdf } from '@/lib/document-pdf'
 
 type Kind = 'quotation' | 'invoice' | 'payment' | null
 const today = () => new Date().toISOString().slice(0, 10)
@@ -61,5 +62,5 @@ function Balances({ customers, projects }: { customers: Customer[]; projects: Pr
 }
 
 function Records({ invoices, payments, quotations, refresh }: { invoices: Invoice[]; payments: Payment[]; quotations: Quotation[]; refresh: () => Promise<void> }) {
-  return <section className="space-y-2"><h3 className="font-bold">اسناد</h3>{invoices.map((item) => <div key={item.id} className="flex justify-between rounded-lg border bg-white p-3 text-sm"><span>{item.number} — {formatMoney(item.total)} — {item.status}</span>{item.status !== 'void' && <button onClick={async () => { await financeRepository.voidInvoice(item.id, 'ابطال توسط کاربر'); await refresh() }} className="text-red-600">ابطال</button>}</div>)}{payments.map((item) => <p key={item.id} className="rounded-lg border bg-white p-3 text-sm">پرداخت {item.date} — {formatMoney(item.amount)}</p>)}{quotations.map((item) => <p key={item.id} className="rounded-lg border bg-white p-3 text-sm">{item.number} — {formatMoney(item.total)}</p>)}</section>
+  return <section className="space-y-2"><h3 className="font-bold">اسناد</h3>{invoices.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-white p-3 text-sm"><span>{item.number} — {formatMoney(item.total)} — {item.status}</span><span className="flex gap-3"><button onClick={() => void downloadDocumentPdf('فاکتور', item.number, item.date, item.total, item.lines)} className="text-indigo-600">PDF</button>{item.status !== 'void' && <button onClick={async () => { await financeRepository.voidInvoice(item.id, 'ابطال توسط کاربر'); await refresh() }} className="text-red-600">ابطال</button>}</span></div>)}{payments.map((item) => <p key={item.id} className="rounded-lg border bg-white p-3 text-sm">پرداخت {item.date} — {formatMoney(item.amount)}</p>)}{quotations.map((item) => <div key={item.id} className="flex justify-between rounded-lg border bg-white p-3 text-sm"><span>{item.number} — {formatMoney(item.total)}</span><button onClick={() => void downloadDocumentPdf('پیش‌فاکتور', item.number, item.date, item.total, item.lines)} className="text-indigo-600">PDF</button></div>)}</section>
 }

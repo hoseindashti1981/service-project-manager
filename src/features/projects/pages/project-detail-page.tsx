@@ -7,6 +7,7 @@ import type { Customer } from '@/domain/customer/types'
 import { isNonEmpty } from '@/lib/validation'
 import { formatDateFa } from '@/lib/dates'
 import { FinancialPanel } from '../components/financial-panel'
+import { ProjectTimeline } from '../components/project-timeline'
 
 const statusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'draft', label: 'پیش‌نویس' },
@@ -156,6 +157,8 @@ export function ProjectDetailPage() {
       )}
 
       {project && <FinancialPanel projectId={project.id} contractAmount={project.contractAmount || 0} />}
+
+      {project && <ProjectTimeline projectId={project.id} createdAt={project.createdAt} />}
 
       <form onSubmit={handleSave} className="space-y-4 bg-white border border-slate-200 rounded-xl p-5">
         {/* مشتری */}
