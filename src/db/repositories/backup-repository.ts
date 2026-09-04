@@ -17,7 +17,7 @@ export const backupRepository = {
   },
   async import(backup: BackupData) {
     if (!this.validate(backup)) throw new Error('ساختار فایل بکاپ معتبر نیست')
-    await db.transaction('rw', db.customers, db.projects, db.services, db.projectItems, db.projectActivities, db.projectChanges, db.materials, db.expenses, db.quotations, db.invoices, db.payments, async () => {
+    await db.transaction('rw', db.tables, async () => {
       for (const name of tables) await db.table(name).clear()
       for (const name of tables) if (backup.data[name].length) await db.table(name).bulkPut(backup.data[name])
     })
