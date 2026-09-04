@@ -1,4 +1,4 @@
-import type { ID, Timestamp } from '@/types'
+import type { ID, Money, Timestamp } from '@/types'
 
 export type ProjectStatus =
   | 'draft'
@@ -17,6 +17,8 @@ export interface Project {
   latitude?: number
   longitude?: number
   workType?: string
+  /** مبلغ توافق اولیه؛ کارهای اضافه جداگانه ثبت می‌شوند. */
+  contractAmount?: Money
   startDate?: string       // ISO date string (YYYY-MM-DD)
   plannedEndDate?: string
   actualEndDate?: string

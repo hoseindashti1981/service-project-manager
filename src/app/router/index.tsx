@@ -9,6 +9,7 @@ import { ProjectsPage } from '../../features/projects/pages/projects-page'
 import { ProjectFormPage } from '../../features/projects/pages/project-form-page'
 import { ProjectDetailPage } from '../../features/projects/pages/project-detail-page'
 import { TodayActivitiesPage } from '../../features/activities/pages/today-activities-page'
+import { FinancePage } from '../../features/finance/pages/finance-page'
 
 const rootRoute = createRootRoute({ component: RootLayout })
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: HomePage })
@@ -20,10 +21,11 @@ const projectsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/pro
 const projectsNewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/new', component: ProjectFormPage })
 const projectDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/$projectId', component: ProjectDetailPage })
 const todayActivitiesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/activities/today', component: TodayActivitiesPage })
+const financeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/finance', component: FinancePage })
 
 const routeTree = rootRoute.addChildren([
   indexRoute, dbTestRoute, customersRoute, customersNewRoute, customerDetailRoute,
-  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute,
+  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL === '/'

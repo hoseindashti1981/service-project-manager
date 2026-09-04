@@ -60,6 +60,7 @@ export const projectRepository = {
       latitude: input.latitude,
       longitude: input.longitude,
       workType: input.workType?.trim(),
+      contractAmount: input.contractAmount ?? 0,
       startDate: input.startDate,
       plannedEndDate: input.plannedEndDate,
       actualEndDate: input.actualEndDate,

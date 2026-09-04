@@ -6,6 +6,7 @@ import type { Project, ProjectStatus } from '@/domain/project/types'
 import type { Customer } from '@/domain/customer/types'
 import { isNonEmpty } from '@/lib/validation'
 import { formatDateFa } from '@/lib/dates'
+import { FinancialPanel } from '../components/financial-panel'
 
 const statusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'draft', label: 'پیش‌نویس' },
@@ -27,6 +28,7 @@ export function ProjectDetailPage() {
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
   const [workType, setWorkType] = useState('')
+  const [contractAmount, setContractAmount] = useState('')
   const [status, setStatus] = useState<ProjectStatus>('draft')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(true)
@@ -54,6 +56,7 @@ export function ProjectDetailPage() {
         setTitle(proj.title)
         setAddress(proj.address || '')
         setWorkType(proj.workType || '')
+        setContractAmount(String(proj.contractAmount || ''))
         setStatus(proj.status)
         setDescription(proj.description || '')
       } catch (err) {
@@ -88,6 +91,7 @@ export function ProjectDetailPage() {
         title: title.trim(),
         address: address.trim() || undefined,
         workType: workType.trim() || undefined,
+        contractAmount: Number(contractAmount) || 0,
         status,
         description: description.trim() || undefined,
       })
@@ -151,6 +155,8 @@ export function ProjectDetailPage() {
         </div>
       )}
 
+      {project && <FinancialPanel projectId={project.id} contractAmount={project.contractAmount || 0} />}
+
       <form onSubmit={handleSave} className="space-y-4 bg-white border border-slate-200 rounded-xl p-5">
         {/* مشتری */}
         <div>
@@ -207,6 +213,11 @@ export function ProjectDetailPage() {
             onChange={(e) => setWorkType(e.target.value)}
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه (تومان)</label>
+          <input type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
         </div>
 
         {/* وضعیت */}

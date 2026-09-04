@@ -24,6 +24,7 @@ export function ProjectFormPage() {
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
   const [workType, setWorkType] = useState('')
+  const [contractAmount, setContractAmount] = useState('')
   const [status, setStatus] = useState<ProjectStatus>('draft')
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -63,6 +64,7 @@ export function ProjectFormPage() {
         title: title.trim(),
         address: address.trim() || undefined,
         workType: workType.trim() || undefined,
+        contractAmount: Number(contractAmount) || 0,
         status,
         description: description.trim() || undefined,
       })
@@ -152,6 +154,11 @@ export function ProjectFormPage() {
             placeholder="مثال: نور خطی، سیستم صوتی"
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه (تومان)</label>
+          <input type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰۰۰" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
         </div>
 
         {/* وضعیت */}
