@@ -7,7 +7,7 @@ const context = await browser.newContext({ viewport: { width: 390, height: 844 }
 const page = await context.newPage()
 const errors = []
 page.on('pageerror', error => errors.push(error.message))
-page.on('dialog', dialog => dialog.accept())
+page.on('dialog', dialog => dialog.accept(dialog.type() === 'prompt' ? 'اصلاح داده آزمایشی' : undefined))
 const base = process.env.SPM_TEST_URL || 'http://127.0.0.1:5173'
 async function go(path) { await page.goto(base + path); await page.locator('main').waitFor() }
 async function eventually(check) {
@@ -28,7 +28,7 @@ try {
   const { projectItemRepository } = await import('/src/db/repositories/project-item-repository.ts')
   const customer = await customerRepository.create({ name: 'مشتری آزمون', mobile: '09123456789', date: '2025-03-20' })
   const projects = []
-  for(const status of ['draft','in_progress','active','planned']) projects.push(await projectRepository.create({ title: `پروژه ${status}`, customerId: customer.id, status, startDate: '2025-03-20' }))
+  for(const status of ['draft','in_progress','in_progress','planned']) projects.push(await projectRepository.create({ title: `پروژه ${status}`, customerId: customer.id, status, startDate: '2025-03-20', agreementDate: status !== 'draft' ? '2025-03-20' : undefined, executionStartDate: status === 'in_progress' ? '2025-03-20' : undefined }))
   const item = await projectItemRepository.create({ projectId: projects[2].id, title: 'نور خطی آزمایشی', unit: 'meter', quantity: 10, unitPrice: 100, pricingType: 'PER_METER' })
   return { customer, projects, item }
  })
@@ -65,6 +65,7 @@ try {
  let stored = await page.evaluate(async () => (await (await import('/src/db/db.ts')).db.projectActivities.toArray())[0])
  assert.equal(stored.date, '2025-03-20'); assert.equal(stored.quantity, 2.5); assert.equal(stored.projectItemId, fixture.item.id); assert.equal(stored.unit, 'meter')
  await page.getByRole('button', { name: 'ویرایش', exact: true }).click()
+ await page.getByLabel('دلیل اصلاح یا ثبت دیرهنگام', { exact: true }).fill('اصلاح مقدار آزمون')
  await page.getByLabel(/مقدار انجام‌شده/).fill('۴')
  await page.getByRole('button', { name: 'ذخیره تغییرات', exact: true }).click()
  await eventually(async () => /باقی‌مانده: ۶/.test(await page.locator('main').innerText()))
@@ -83,7 +84,7 @@ try {
  await eventually(async () => /باقی‌مانده: ۱۰/.test(await page.locator('main').innerText()))
  console.log('Linked activity create/edit/delete, historical totals, reload, and deletion guard pass')
  await go('/reminders')
- assert.match(await page.locator('form select').last().innerText(), /پروژه active — مشتری آزمون/)
+ assert.match(await page.locator('form select').last().innerText(), /پروژه in_progress — مشتری آزمون/)
  await go('/finance')
  for (const [button, table] of [['پیش‌فاکتور','quotations'], ['فاکتور','invoices'], ['پرداخت','payments']]) {
   await page.getByRole('button', { name: button, exact: true }).click()
@@ -125,6 +126,7 @@ try {
  await go('/activities/today')
  await page.getByLabel('پروژه و مشتری', { exact: true }).selectOption(fixture.projects[0].id)
  const serviceSelect = page.getByLabel('خدمت پروژه', { exact: true })
+ await page.getByLabel('شروع اجرای پروژه با تاریخ این فعالیت و ثبت فعالیت').check()
  await serviceSelect.selectOption(`catalog:${catalogFixture.id}`)
  assert.ok(!(await serviceSelect.innerText()).includes('خدمت غیرفعال آزمون'))
  await page.getByLabel('مقدار کل خدمت در پروژه', { exact: true }).fill('۱۰')
@@ -149,12 +151,13 @@ try {
  console.log('Quick-add lists catalog services, attaches once with base price, preserves progress, and rolls back failed saves')
 
  await go('/')
- for (const [status, label] of [['draft','پیش‌نویس'], ['in_progress','در جریان'], ['active','فعال'], ['planned','برنامه‌ریزی‌شده']]) {
+ for (const [status, label] of [['draft','پیش‌نویس'], ['planned','برنامه‌ریزی‌شده'], ['in_progress','در جریان'], ['paused','متوقف'], ['completed','تکمیل‌شده']]) {
+  const expected = await page.evaluate(async (status) => (await (await import('/src/db/db.ts')).db.projects.toArray()).filter(project => project.status === status).map(project => project.title), status)
   await page.getByRole('link', { name: new RegExp(`پروژه‌های ${label}`) }).click()
   await page.waitForURL(`**/projects?status=${status}`)
+  if (expected.length) await page.locator('main a[href^="/projects/"]').filter({ hasText: expected[0] }).first().waitFor()
   const names = await page.locator('main a[href^="/projects/"]').allTextContents()
-  assert.ok(names.some(text => text.includes(`پروژه ${status}`)))
-  assert.ok(!names.some(text => fixture.projects.filter(p => p.status !== status).some(p => text.includes(p.title))))
+  for (const title of expected) assert.ok(names.some(text => text.includes(title)))
   await go('/')
  }
  await page.locator(`a[href="/projects/${fixture.projects[3].id}"]`).waitFor()
@@ -162,5 +165,5 @@ try {
  mkdirSync('test-results', { recursive: true })
  await page.screenshot({ path: 'test-results/dashboard-mobile.png', fullPage: true })
  assert.deepEqual(errors, [])
- console.log('Four dashboard links, individual project cards, mobile overflow, and console checks pass')
+ console.log('Five dashboard links, individual project cards, mobile overflow, and console checks pass')
 } finally { await browser.close() }

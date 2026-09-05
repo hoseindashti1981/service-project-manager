@@ -1,4 +1,4 @@
-import { projectStatusOptions as statusOptions } from '@/domain/project/status'
+import { newProjectStatuses as statusOptions } from '@/domain/project/status'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, requireDate } from '@/lib/dates'
 import { useEffect, useState } from 'react'
@@ -16,7 +16,8 @@ export function ProjectFormPage() {
   const [customerId, setCustomerId] = useState('')
   const [startDate, setStartDate] = useState(toISODate)
   const [plannedEndDate, setPlannedEndDate] = useState('')
-  const [actualEndDate, setActualEndDate] = useState('')
+  const [agreementDate, setAgreementDate] = useState(toISODate)
+  const [executionStartDate, setExecutionStartDate] = useState(toISODate)
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
   const [workType, setWorkType] = useState('')
@@ -52,7 +53,7 @@ export function ProjectFormPage() {
       return
     }
 
-    if ((plannedEndDate && plannedEndDate < startDate) || (actualEndDate && actualEndDate < startDate)) { setError('تاریخ پایان نمی‌تواند قبل از تاریخ پروژه باشد.'); return }
+    if ((plannedEndDate && plannedEndDate < startDate)) { setError('تاریخ پایان نمی‌تواند قبل از تاریخ پروژه باشد.'); return }
     try {
       setLoading(true)
 
@@ -60,7 +61,8 @@ export function ProjectFormPage() {
         customerId,
         startDate: requireDate(startDate),
         plannedEndDate: plannedEndDate || undefined,
-        actualEndDate: actualEndDate || undefined,
+        agreementDate: status !== 'draft' ? agreementDate : undefined,
+        executionStartDate: status === 'in_progress' ? executionStartDate : undefined,
         title: title.trim(),
         address: address.trim() || undefined,
         workType: workType.trim() || undefined,
@@ -72,7 +74,7 @@ export function ProjectFormPage() {
       navigate({ to: '/projects' })
     } catch (err) {
       console.error(err)
-      setError('خطا در ذخیره پروژه')
+      setError(err instanceof Error ? err.message : 'خطا در ذخیره پروژه')
     } finally {
       setLoading(false)
     }
@@ -164,7 +166,7 @@ export function ProjectFormPage() {
         <div className="space-y-3">
           <div><span className="mb-1 block text-sm font-medium">تاریخ پروژه (شمسی)</span><JalaliDatePicker label="تاریخ پروژه" value={startDate} onChange={setStartDate} /></div>
           <div><label className="flex gap-2 text-sm"><input type="checkbox" checked={!!plannedEndDate} onChange={(event) => setPlannedEndDate(event.target.checked ? startDate : '')} />تعیین تاریخ پایان برنامه‌ریزی‌شده</label>{plannedEndDate && <JalaliDatePicker label="پایان برنامه‌ریزی‌شده" value={plannedEndDate} onChange={setPlannedEndDate} />}</div>
-          <div><label className="flex gap-2 text-sm"><input type="checkbox" checked={!!actualEndDate} onChange={(event) => setActualEndDate(event.target.checked ? startDate : '')} />تعیین تاریخ پایان واقعی</label>{actualEndDate && <JalaliDatePicker label="پایان واقعی" value={actualEndDate} onChange={setActualEndDate} />}</div>
+
         </div>
         {/* وضعیت */}
         <div>
@@ -184,6 +186,8 @@ export function ProjectFormPage() {
           </select>
         </div>
 
+        {status !== 'draft' && <div><p className="text-sm">تاریخ توافق</p><JalaliDatePicker label="تاریخ توافق" value={agreementDate} onChange={setAgreementDate} /></div>}
+        {status === 'in_progress' && <div><p className="text-sm">شروع اجرای واقعی</p><JalaliDatePicker label="شروع اجرای واقعی" value={executionStartDate} onChange={setExecutionStartDate} /></div>}
         {/* توضیحات */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">

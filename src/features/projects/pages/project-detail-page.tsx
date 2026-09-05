@@ -1,4 +1,4 @@
-import { projectStatusOptions as statusOptions } from '@/domain/project/status'
+import { ProjectWorkflow } from '../components/project-workflow'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, requireDate } from '@/lib/dates'
 import { ProjectServices } from '../components/project-services'
@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { projectRepository } from '@/db/repositories/project-repository'
 import { customerRepository } from '@/db/repositories/customer-repository'
-import type { Project, ProjectStatus } from '@/domain/project/types'
+import type { Project } from '@/domain/project/types'
 import type { Customer } from '@/domain/customer/types'
 import { isNonEmpty } from '@/lib/validation'
 import { formatDateFa } from '@/lib/dates'
@@ -23,11 +23,13 @@ export function ProjectDetailPage() {
   const [startDate, setStartDate] = useState(toISODate)
   const [plannedEndDate, setPlannedEndDate] = useState('')
   const [actualEndDate, setActualEndDate] = useState('')
+  const [agreementDate, setAgreementDate] = useState('')
+  const [executionStartDate, setExecutionStartDate] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
   const [workType, setWorkType] = useState('')
   const [contractAmount, setContractAmount] = useState('')
-  const [status, setStatus] = useState<ProjectStatus>('draft')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -54,11 +56,13 @@ export function ProjectDetailPage() {
         setStartDate(proj.startDate || toISODate(new Date(proj.createdAt)))
         setPlannedEndDate(proj.plannedEndDate || '')
         setActualEndDate(proj.actualEndDate || '')
+        setAgreementDate(proj.agreementDate || '')
+        setExecutionStartDate(proj.executionStartDate || '')
+        setDeliveryDate(proj.deliveryDate || '')
         setTitle(proj.title)
         setAddress(proj.address || '')
         setWorkType(proj.workType || '')
         setContractAmount(String(proj.contractAmount || ''))
-        setStatus(proj.status)
         setDescription(proj.description || '')
       } catch (err) {
         console.error(err)
@@ -93,18 +97,20 @@ export function ProjectDetailPage() {
         startDate: requireDate(startDate),
         plannedEndDate: plannedEndDate || undefined,
         actualEndDate: actualEndDate || undefined,
+        agreementDate: agreementDate || undefined,
+        executionStartDate: executionStartDate || undefined,
+        deliveryDate: deliveryDate || undefined,
         title: title.trim(),
         address: address.trim() || undefined,
         workType: workType.trim() || undefined,
         contractAmount: Number(contractAmount) || 0,
-        status,
         description: description.trim() || undefined,
       })
       setProject(updated)
       setMessage('تغییرات با موفقیت ذخیره شد')
     } catch (err) {
       console.error(err)
-      setError('خطا در ذخیره تغییرات')
+      setError(err instanceof Error ? err.message : 'خطا در ذخیره تغییرات')
     } finally {
       setSaving(false)
     }
@@ -160,6 +166,7 @@ export function ProjectDetailPage() {
         </div>
       )}
 
+      {project && <ProjectWorkflow project={project} onChange={(updated) => { setProject(updated); setAgreementDate(updated.agreementDate || ''); setExecutionStartDate(updated.executionStartDate || ''); setActualEndDate(updated.actualEndDate || ''); setDeliveryDate(updated.deliveryDate || '') }} />}
       {project && <ProjectServices projectId={project.id} />}
 
       {project && <FinancialPanel projectId={project.id} contractAmount={project.contractAmount || 0} />}
@@ -234,24 +241,11 @@ export function ProjectDetailPage() {
           <div><label className="flex gap-2 text-sm"><input type="checkbox" checked={!!plannedEndDate} onChange={(event) => setPlannedEndDate(event.target.checked ? startDate : '')} />تعیین تاریخ پایان برنامه‌ریزی‌شده</label>{plannedEndDate && <JalaliDatePicker label="پایان برنامه‌ریزی‌شده" value={plannedEndDate} onChange={setPlannedEndDate} />}</div>
           <div><label className="flex gap-2 text-sm"><input type="checkbox" checked={!!actualEndDate} onChange={(event) => setActualEndDate(event.target.checked ? startDate : '')} />تعیین تاریخ پایان واقعی</label>{actualEndDate && <JalaliDatePicker label="پایان واقعی" value={actualEndDate} onChange={setActualEndDate} />}</div>
         </div>
-        {/* وضعیت */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            وضعیت
-          </label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-          >
-            {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
+        <div className="space-y-3">{[
+          { label: 'تاریخ توافق', value: agreementDate, set: setAgreementDate },
+          { label: 'شروع اجرای واقعی', value: executionStartDate, set: setExecutionStartDate },
+          { label: 'تاریخ تحویل', value: deliveryDate, set: setDeliveryDate },
+        ].map((field) => <div key={field.label}><label className="flex gap-2 text-sm"><input type="checkbox" checked={!!field.value} onChange={(event) => field.set(event.target.checked ? toISODate() : '')} />{field.label}</label>{field.value && <JalaliDatePicker label={field.label} value={field.value} onChange={field.set} />}</div>)}</div>
         {/* توضیحات */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">

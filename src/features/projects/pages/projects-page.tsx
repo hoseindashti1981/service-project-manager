@@ -76,7 +76,7 @@ export function ProjectsPage() {
         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
       />
 
-      <div className="flex flex-wrap gap-2"><Link to="/projects" search={{}} className={`rounded-lg border px-3 py-2 text-sm ${!status ? 'bg-indigo-600 text-white' : 'bg-white'}`}>همه</Link>{projectStatusOptions.map((item) => <Link key={item.value} to="/projects" search={{ status: item.value }} className={`rounded-lg border px-3 py-2 text-sm ${status === item.value ? 'bg-indigo-600 text-white' : 'bg-white'}`}>{item.label}</Link>)}</div>
+      <div className="flex flex-wrap gap-2"><Link to="/projects" search={{}} className={`rounded-lg border px-3 py-2 text-sm ${!status ? 'bg-indigo-600 text-white' : 'bg-white'}`}>همه</Link>{[...projectStatusOptions, ...(projects.some((project) => project.status === 'active') ? [{ value: 'active', label: 'فعال قدیمی؛ نیازمند بررسی' }] : [])].map((item) => <Link key={item.value} to="/projects" search={{ status: item.value }} className={`rounded-lg border px-3 py-2 text-sm ${status === item.value ? 'bg-indigo-600 text-white' : 'bg-white'}`}>{item.label}</Link>)}</div>
       {/* حالت‌ها */}
       {loading && (
         <div className="text-slate-500 text-sm py-8 text-center">
