@@ -1,3 +1,4 @@
+import type { RecoverySnapshot } from '@/domain/backup/types'
 import Dexie, { type Table } from 'dexie'
 import type { Customer } from '@/domain/customer/types'
 import type { Project } from '@/domain/project/types'
@@ -11,6 +12,7 @@ import type { Invoice, Payment, Quotation } from '@/domain/finance/types'
 import type { Reminder } from '@/domain/reminder/types'
 
 export class ServiceProjectManagerDB extends Dexie {
+  recoverySnapshots!: Table<RecoverySnapshot, string>
   customers!: Table<Customer, string>
   projects!: Table<Project, string>
   services!: Table<Service, string>
@@ -81,6 +83,8 @@ export class ServiceProjectManagerDB extends Dexie {
       payments: 'id, customerId, projectId, invoiceId, date, createdAt',
       reminders: 'id, dueDate, status, projectId, createdAt, updatedAt',
     })
+    // Recovery is deliberately excluded from exported business tables to avoid recursive backups.
+    this.version(6).stores({ recoverySnapshots: 'id' })
   }
 }
 

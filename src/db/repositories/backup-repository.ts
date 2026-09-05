@@ -1,25 +1,44 @@
 import { db } from '@/db/db'
+import { backupTables, type BackupRows, type BackupData, type BackupPreview } from '@/domain/backup/types'
+import { createBackup, inspectBackup, parseBackup } from '@/domain/backup/validation'
+export type { BackupData } from '@/domain/backup/types'
 
-const tables = ['customers', 'projects', 'services', 'projectItems', 'projectActivities', 'projectChanges', 'materials', 'expenses', 'quotations', 'invoices', 'payments'] as const
-type TableName = typeof tables[number]
-export type BackupData = { version: 1; exportedAt: string; data: Record<TableName, unknown[]> }
-
+function ensureSupportedSchema() {
+  if (db.tables.some(table => table.name !== 'recoverySnapshots' && !backupTables.includes(table.name as typeof backupTables[number]))) throw new Error('ساختار دیتابیس با این نسخه بکاپ سازگار نیست.')
+}
+async function snapshot(): Promise<BackupRows> {
+  const entries = await Promise.all(backupTables.map(async table => [table, await db.table(table).toArray()] as const))
+  return Object.fromEntries(entries) as BackupRows
+}
 export const backupRepository = {
   async export(): Promise<BackupData> {
-    const data = {} as Record<TableName, unknown[]>
-    await Promise.all(tables.map(async (name) => { data[name] = await db.table(name).toArray() }))
-    return { version: 1, exportedAt: new Date().toISOString(), data }
+    ensureSupportedSchema()
+    const data = await db.transaction('r', backupTables.map(table => db.table(table)), snapshot)
+    const backup = await createBackup(data)
+    await inspectBackup(backup)
+    return backup
   },
-  validate(value: unknown): value is BackupData {
-    if (!value || typeof value !== 'object') return false
-    const backup = value as Partial<BackupData>
-    return backup.version === 1 && !!backup.data && tables.every((name) => Array.isArray(backup.data?.[name]))
-  },
-  async import(backup: BackupData) {
-    if (!this.validate(backup)) throw new Error('ساختار فایل بکاپ معتبر نیست')
+  inspect: inspectBackup,
+  async import(value: unknown): Promise<BackupPreview> {
+    // Own the validated input: external mutation cannot change rows after verification.
+    const preview = await inspectBackup(structuredClone(value))
+    ensureSupportedSchema()
     await db.transaction('rw', db.tables, async () => {
-      for (const name of tables) await db.table(name).clear()
-      for (const name of tables) if (backup.data[name].length) await db.table(name).bulkPut(backup.data[name])
+      const current = await snapshot()
+      const exportedAt = new Date().toISOString()
+      // Ensure the safety copy can be restored before altering any business data.
+      parseBackup({ version:1, exportedAt, data:current })
+      await db.recoverySnapshots.put({ id:'latest', exportedAt, data:current })
+      for (const table of backupTables) {
+        await db.table(table).clear()
+        if (preview.data[table].length) await db.table(table).bulkPut(preview.data[table])
+      }
     })
+    return preview
+  },
+  async getRecovery(): Promise<BackupData | undefined> {
+    const recovery = await db.recoverySnapshots.get('latest')
+    if (!recovery) return undefined
+    return createBackup(recovery.data,recovery.exportedAt)
   },
 }
