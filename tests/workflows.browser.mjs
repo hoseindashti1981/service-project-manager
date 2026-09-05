@@ -116,6 +116,38 @@ try {
  await eventually(async () => await page.getByRole('heading', { name: 'خدمت با تاریخ گذشته', exact: true }).count() > 0)
  assert.equal(await page.evaluate(async () => (await (await import('/src/db/db.ts')).db.services.toArray()).find(item => item.name === 'خدمت با تاریخ گذشته').date), '2025-03-20')
  console.log('Project expenses, materials, extra work and catalog dates persist')
+ const catalogFixture = await page.evaluate(async () => {
+  const { serviceRepository } = await import('/src/db/repositories/service-repository.ts')
+  const service = await serviceRepository.create({ name: 'خدمت مستقیم کاتالوگ', defaultUnit: 'meter', defaultUnitPrice: 500, isActive: true })
+  await serviceRepository.create({ name: 'خدمت غیرفعال آزمون', defaultUnit: 'meter', defaultUnitPrice: 0, isActive: false })
+  return service
+ })
+ await go('/activities/today')
+ await page.getByLabel('پروژه و مشتری', { exact: true }).selectOption(fixture.projects[0].id)
+ const serviceSelect = page.getByLabel('خدمت پروژه', { exact: true })
+ await serviceSelect.selectOption(`catalog:${catalogFixture.id}`)
+ assert.ok(!(await serviceSelect.innerText()).includes('خدمت غیرفعال آزمون'))
+ await page.getByLabel('مقدار کل خدمت در پروژه', { exact: true }).fill('۱۰')
+ await page.getByLabel(/مقدار انجام‌شده/).fill('۲٫۵')
+ await page.getByRole('button', { name: 'ثبت فعالیت', exact: true }).click()
+ await page.getByRole('status').waitFor()
+ const attached = await page.evaluate(async ({ projectId, serviceId }) => (await (await import('/src/db/db.ts')).db.projectItems.toArray()).filter(row => row.projectId === projectId && row.serviceId === serviceId), { projectId: fixture.projects[0].id, serviceId: catalogFixture.id })
+ assert.equal(attached.length, 1); assert.equal(attached[0].quantity, 10); assert.equal(attached[0].unitPrice, 500)
+ await serviceSelect.selectOption(attached[0].id)
+ await page.getByLabel(/مقدار انجام‌شده/).fill('۱')
+ await page.getByRole('button', { name: 'ثبت فعالیت', exact: true }).click()
+ await eventually(async () => /باقی‌مانده: ۶٫۵/.test(await page.locator('main').innerText()))
+ const result = await page.evaluate(async ({ projectId, serviceId }) => {
+  const { db } = await import('/src/db/db.ts')
+  const { saveCatalogActivity } = await import('/src/db/repositories/catalog-activity.ts')
+  const before = await db.projectItems.count()
+  let rejected = false
+  try { await saveCatalogActivity({ projectId, title: '', date: '2025-03-20', quantity: 1 }, serviceId, 10) } catch { rejected = true }
+  return { rejected, before, after: await db.projectItems.count() }
+ }, { projectId: fixture.projects[1].id, serviceId: catalogFixture.id })
+ assert.equal(result.rejected, true); assert.equal(result.before, result.after)
+ console.log('Quick-add lists catalog services, attaches once with base price, preserves progress, and rolls back failed saves')
+
  await go('/')
  for (const [status, label] of [['draft','پیش‌نویس'], ['in_progress','در جریان'], ['active','فعال'], ['planned','برنامه‌ریزی‌شده']]) {
   await page.getByRole('link', { name: new RegExp(`پروژه‌های ${label}`) }).click()
