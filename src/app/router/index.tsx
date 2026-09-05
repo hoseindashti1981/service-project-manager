@@ -11,6 +11,8 @@ import { ProjectDetailPage } from '../../features/projects/pages/project-detail-
 import { TodayActivitiesPage } from '../../features/activities/pages/today-activities-page'
 import { FinancePage } from '../../features/finance/pages/finance-page'
 import { ReportsPage } from '../../features/reports/pages/reports-page'
+import { CalendarPage } from '../../features/calendar/pages/calendar-page'
+import { RemindersPage } from '../../features/reminders/pages/reminders-page'
 
 const rootRoute = createRootRoute({ component: RootLayout })
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: HomePage })
@@ -24,10 +26,12 @@ const projectDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: 
 const todayActivitiesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/activities/today', component: TodayActivitiesPage })
 const financeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/finance', component: FinancePage })
 const reportsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reports', component: ReportsPage })
+const calendarRoute = createRoute({ getParentRoute: () => rootRoute, path: '/calendar', component: CalendarPage })
+const remindersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reminders', component: RemindersPage })
 
 const routeTree = rootRoute.addChildren([
   indexRoute, dbTestRoute, customersRoute, customersNewRoute, customerDetailRoute,
-  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute, reportsRoute,
+  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL === '/'

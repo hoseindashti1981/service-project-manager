@@ -8,6 +8,7 @@ import type { ProjectChange } from '@/domain/project-change/types'
 import type { Material } from '@/domain/material/types'
 import type { Expense } from '@/domain/expense/types'
 import type { Invoice, Payment, Quotation } from '@/domain/finance/types'
+import type { Reminder } from '@/domain/reminder/types'
 
 export class ServiceProjectManagerDB extends Dexie {
   customers!: Table<Customer, string>
@@ -21,6 +22,7 @@ export class ServiceProjectManagerDB extends Dexie {
   quotations!: Table<Quotation, string>
   invoices!: Table<Invoice, string>
   payments!: Table<Payment, string>
+  reminders!: Table<Reminder, string>
 
   constructor() {
     super('ServiceProjectManagerDB')
@@ -63,6 +65,21 @@ export class ServiceProjectManagerDB extends Dexie {
       quotations: 'id, number, customerId, projectId, date, status, createdAt',
       invoices: 'id, number, customerId, projectId, quotationId, date, status, createdAt',
       payments: 'id, customerId, projectId, invoiceId, date, createdAt',
+    })
+
+    this.version(5).stores({
+      customers: 'id, name, mobile, createdAt, updatedAt',
+      projects: 'id, customerId, title, status, createdAt, updatedAt',
+      services: 'id, name, isActive, createdAt, updatedAt',
+      projectItems: 'id, projectId, serviceId, createdAt, updatedAt',
+      projectActivities: 'id, projectId, projectItemId, date, createdAt, updatedAt',
+      projectChanges: 'id, projectId, date, createdAt, updatedAt',
+      materials: 'id, projectId, source, createdAt, updatedAt',
+      expenses: 'id, projectId, date, createdAt, updatedAt',
+      quotations: 'id, number, customerId, projectId, date, status, createdAt',
+      invoices: 'id, number, customerId, projectId, quotationId, date, status, createdAt',
+      payments: 'id, customerId, projectId, invoiceId, date, createdAt',
+      reminders: 'id, dueDate, status, projectId, createdAt, updatedAt',
     })
   }
 }

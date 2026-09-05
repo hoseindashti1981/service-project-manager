@@ -7,6 +7,10 @@ function generateId(): string {
 }
 
 export const activityRepository = {
+  async getAll(): Promise<ProjectActivity[]> {
+    return db.projectActivities.orderBy('date').reverse().toArray()
+  },
+
   async getByProjectId(projectId: ID): Promise<ProjectActivity[]> {
     return db.projectActivities
       .where('projectId')
