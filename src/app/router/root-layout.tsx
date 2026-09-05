@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { BarChart3, Bell, CalendarDays, ClipboardList, FolderKanban, Home, Menu, MoreHorizontal, Users, WalletCards, X } from 'lucide-react'
+import { BarChart3, Bell, CalendarDays, ClipboardList, FolderKanban, Home, Menu, MoreHorizontal, Tags, Users, WalletCards, X } from 'lucide-react'
 import { useState } from 'react'
 
 const navigation = [
@@ -11,6 +11,7 @@ const navigation = [
   { to: '/reports', label: 'گزارش‌ها', icon: BarChart3 },
   { to: '/calendar', label: 'تقویم کارها', icon: CalendarDays },
   { to: '/reminders', label: 'یادآوری‌ها', icon: Bell },
+  { to: '/services', label: 'خدمات', icon: Tags },
 ] as const
 
 export function RootLayout() {

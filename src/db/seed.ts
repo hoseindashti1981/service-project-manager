@@ -27,6 +27,7 @@ export async function seedDefaultServices() {
     await serviceRepository.create({
       name: item.name,
       defaultUnit: item.defaultUnit,
+      defaultUnitPrice: 0,
       isActive: true,
     })
   }

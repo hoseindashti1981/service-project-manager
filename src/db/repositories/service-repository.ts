@@ -1,3 +1,4 @@
+import { validateServicePrice } from '@/domain/service/helpers'
 import { db } from '@/db/db'
 import type { Service, CreateServiceInput } from '@/domain/service/types'
 import type { ID } from '@/types'
@@ -24,12 +25,14 @@ export const serviceRepository = {
 
   /** ایجاد سرویس جدید */
   async create(input: CreateServiceInput): Promise<Service> {
+    if (!input.name.trim()) throw new Error('نام خدمت را وارد کنید.')
     const now = Date.now()
 
     const service: Service = {
       id: generateId(),
       name: input.name.trim(),
       defaultUnit: input.defaultUnit,
+      defaultUnitPrice: validateServicePrice(input.defaultUnitPrice ?? 0),
       description: input.description?.trim(),
       isActive: input.isActive ?? true,
       createdAt: now,
@@ -47,11 +50,13 @@ export const serviceRepository = {
       throw new Error('سرویس یافت نشد')
     }
 
+    if (input.name !== undefined && !input.name.trim()) throw new Error('نام خدمت را وارد کنید.')
     const updated: Service = {
       ...existing,
       ...input,
       name: input.name?.trim() ?? existing.name,
       description: input.description?.trim() ?? existing.description,
+      defaultUnitPrice: input.defaultUnitPrice === undefined ? (existing.defaultUnitPrice ?? 0) : validateServicePrice(input.defaultUnitPrice),
       updatedAt: Date.now(),
     }
 

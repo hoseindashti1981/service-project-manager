@@ -1,3 +1,4 @@
+import { ProjectServices } from '../components/project-services'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { projectRepository } from '@/db/repositories/project-repository'
@@ -155,6 +156,8 @@ export function ProjectDetailPage() {
           ایجاد شده در: {formatDateFa(project.createdAt)}
         </div>
       )}
+
+      {project && <ProjectServices projectId={project.id} />}
 
       {project && <FinancialPanel projectId={project.id} contractAmount={project.contractAmount || 0} />}
 

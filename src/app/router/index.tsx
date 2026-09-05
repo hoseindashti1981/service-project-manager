@@ -13,6 +13,7 @@ import { FinancePage } from '../../features/finance/pages/finance-page'
 import { ReportsPage } from '../../features/reports/pages/reports-page'
 import { CalendarPage } from '../../features/calendar/pages/calendar-page'
 import { RemindersPage } from '../../features/reminders/pages/reminders-page'
+import { ServicesPage } from '../../features/services/pages/services-page'
 
 const rootRoute = createRootRoute({ component: RootLayout })
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: HomePage })
@@ -28,10 +29,11 @@ const financeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/fina
 const reportsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reports', component: ReportsPage })
 const calendarRoute = createRoute({ getParentRoute: () => rootRoute, path: '/calendar', component: CalendarPage })
 const remindersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reminders', component: RemindersPage })
+const servicesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/services', component: ServicesPage })
 
 const routeTree = rootRoute.addChildren([
   indexRoute, dbTestRoute, customersRoute, customersNewRoute, customerDetailRoute,
-  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute,
+  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute, servicesRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL === '/'
