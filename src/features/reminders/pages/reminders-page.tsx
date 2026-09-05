@@ -4,9 +4,7 @@ import { Bell, Check, Plus, Trash2 } from 'lucide-react'
 import { reminderRepository } from '@/db/repositories/reminder-repository'
 import { projectRepository } from '@/db/repositories/project-repository'
 import { toISODate } from '@/lib/dates'
-import DatePicker, { DateObject } from 'react-multi-date-picker'
-import persian from 'react-date-object/calendars/persian'
-import persianFa from 'react-date-object/locales/persian_fa'
+import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import type { Project } from '@/domain/project/types'
 import type { Reminder } from '@/domain/reminder/types'
 
@@ -50,7 +48,7 @@ export function RemindersPage() {
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">یادآوری‌ها</h1><p className="mt-1 text-sm text-slate-500">همه‌چیز روی همین دستگاه ذخیره می‌شود.</p></div><Link to="/calendar" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">نمای تقویم</Link></div>
     <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2">
       <label className="md:col-span-2"><span className="mb-1 block text-sm font-medium">یادآوری جدید</span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="مثلاً پیگیری پیش‌فاکتور" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-indigo-500" /></label>
-      <label><span className="mb-1 block text-sm font-medium">تاریخ (شمسی)</span><DatePicker calendar={persian} locale={persianFa} value={new DateObject({ date: `${dueDate}T12:00:00` })} onChange={(value) => { if (value && !Array.isArray(value)) { const date = value.toDate(); setDueDate(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`) } }} format="YYYY/MM/DD" calendarPosition="bottom-right" inputClass="w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-indigo-500" containerClassName="w-full" /></label>
+      <label><span className="mb-1 block text-sm font-medium">تاریخ (شمسی)</span><JalaliDatePicker value={dueDate} onChange={setDueDate} /></label>
       <label><span className="mb-1 block text-sm font-medium">پروژه (اختیاری)</span><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">بدون پروژه</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label>
       <label className="md:col-span-2"><span className="mb-1 block text-sm font-medium">یادداشت (اختیاری)</span><input value={note} onChange={(event) => setNote(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
       {error && <p className="md:col-span-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
