@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from '@tanstack/react-router'
 import { router } from './app/router'
+import { PwaInstallPrompt } from './components/pwa-install-prompt'
 import './index.css'
 
 const redirectedPath = new URLSearchParams(window.location.search).get('p')
@@ -14,6 +15,7 @@ if (redirectedPath) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <PwaInstallPrompt />
     <RouterProvider router={router} />
   </StrictMode>
 )
