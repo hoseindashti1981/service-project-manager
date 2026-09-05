@@ -1,3 +1,4 @@
+import { requireDate } from '@/lib/dates'
 import { db } from '@/db/db'
 import type { Customer, CreateCustomerInput, UpdateCustomerInput } from '@/domain/customer/types'
 import type { ID } from '@/types'
@@ -32,6 +33,7 @@ export const customerRepository = {
 
   /** ایجاد مشتری جدید */
   async create(input: CreateCustomerInput): Promise<Customer> {
+    if (input.date !== undefined) requireDate(input.date)
     const now = Date.now()
 
     const customer: Customer = {
@@ -39,6 +41,7 @@ export const customerRepository = {
       name: input.name.trim(),
       mobile: input.mobile.trim(),
       description: input.description?.trim(),
+      date: input.date,
       createdAt: now,
       updatedAt: now,
     }
@@ -49,6 +52,7 @@ export const customerRepository = {
 
   /** ویرایش مشتری */
   async update(id: ID, input: UpdateCustomerInput): Promise<Customer> {
+    if (input.date !== undefined) requireDate(input.date)
     const existing = await db.customers.get(id)
     if (!existing) {
       throw new Error('مشتری یافت نشد')

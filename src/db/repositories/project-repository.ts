@@ -1,3 +1,4 @@
+import { requireDate } from '@/lib/dates'
 import { db } from '@/db/db'
 import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '@/domain/project/types'
 import type { ID } from '@/types'
@@ -50,6 +51,7 @@ export const projectRepository = {
 
   /** ایجاد پروژه جدید */
   async create(input: CreateProjectInput): Promise<Project> {
+    validateDates(input)
     const now = Date.now()
 
     const project: Project = {
@@ -91,6 +93,7 @@ export const projectRepository = {
       updatedAt: Date.now(),
     }
 
+    validateDates(updated)
     await db.projects.put(updated)
     return updated
   },
@@ -99,4 +102,9 @@ export const projectRepository = {
   async delete(id: ID): Promise<void> {
     await db.projects.delete(id)
   },
+}
+
+function validateDates(input: UpdateProjectInput) {
+  for (const date of [input.startDate, input.plannedEndDate, input.actualEndDate]) if (date !== undefined) requireDate(date)
+  if (input.startDate && ((input.plannedEndDate && input.plannedEndDate < input.startDate) || (input.actualEndDate && input.actualEndDate < input.startDate))) throw new Error('تاریخ پایان نمی‌تواند قبل از تاریخ پروژه باشد.')
 }

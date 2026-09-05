@@ -1,3 +1,4 @@
+import { requireDate } from '@/lib/dates'
 import { validateServicePrice } from '@/domain/service/helpers'
 import { db } from '@/db/db'
 import type { Service, CreateServiceInput } from '@/domain/service/types'
@@ -26,6 +27,7 @@ export const serviceRepository = {
   /** ایجاد سرویس جدید */
   async create(input: CreateServiceInput): Promise<Service> {
     if (!input.name.trim()) throw new Error('نام خدمت را وارد کنید.')
+    if (input.date !== undefined) requireDate(input.date)
     const now = Date.now()
 
     const service: Service = {
@@ -35,6 +37,7 @@ export const serviceRepository = {
       defaultUnitPrice: validateServicePrice(input.defaultUnitPrice ?? 0),
       description: input.description?.trim(),
       isActive: input.isActive ?? true,
+      date: input.date,
       createdAt: now,
       updatedAt: now,
     }
@@ -45,6 +48,7 @@ export const serviceRepository = {
 
   /** ویرایش سرویس */
   async update(id: ID, input: Partial<CreateServiceInput>): Promise<Service> {
+    if (input.date !== undefined) requireDate(input.date)
     const existing = await db.services.get(id)
     if (!existing) {
       throw new Error('سرویس یافت نشد')

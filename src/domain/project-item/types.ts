@@ -4,6 +4,7 @@ export interface ProjectItem {
   id: ID
   projectId: ID
   serviceId?: ID          // اگر از کاتالوگ سرویس انتخاب شده باشد
+  date?: string
   title: string           // عنوان کار (مثلاً: نصب نور خطی)
   unit: Unit
   quantity: number        // مقدار کل (مثلاً ۲۵ متر)

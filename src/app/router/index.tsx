@@ -1,3 +1,4 @@
+import { projectStatusOptions } from '@/domain/project/status'
 import { createRouter, createRootRoute, createRoute } from '@tanstack/react-router'
 import { RootLayout } from './root-layout'
 import { HomePage } from '../../features/home/home-page'
@@ -21,7 +22,7 @@ const dbTestRoute = createRoute({ getParentRoute: () => rootRoute, path: '/db-te
 const customersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/customers', component: CustomersPage })
 const customersNewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/customers/new', component: CustomerFormPage })
 const customerDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/customers/$customerId', component: CustomerDetailPage })
-const projectsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects', component: ProjectsPage })
+const projectsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects', validateSearch: (search: Record<string, unknown>): { status?: string } => ({ status: projectStatusOptions.some((item) => item.value === search.status) ? String(search.status) : undefined }), component: ProjectsPage })
 const projectsNewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/new', component: ProjectFormPage })
 const projectDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/$projectId', component: ProjectDetailPage })
 const todayActivitiesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/activities/today', component: TodayActivitiesPage })

@@ -1,3 +1,4 @@
+import { customerRepository } from '@/db/repositories/customer-repository'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Bell, Check, Plus, Trash2 } from 'lucide-react'
@@ -8,10 +9,11 @@ import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import type { Project } from '@/domain/project/types'
 import type { Reminder } from '@/domain/reminder/types'
 
-const today = toISODate()
 const formatPersianDate = (value: string) => new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${value}T12:00:00`))
 
 export function RemindersPage() {
+  const today = toISODate()
+  const [customers, setCustomers] = useState<Record<string, string>>({})
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [title, setTitle] = useState('')
@@ -21,11 +23,12 @@ export function RemindersPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const projectNames = useMemo(() => Object.fromEntries(projects.map((project) => [project.id, project.title])), [projects])
+  const projectNames = useMemo(() => Object.fromEntries(projects.map((project) => [project.id, `${project.title} — ${customers[project.customerId] || 'مشتری نامشخص'}`])), [projects, customers])
   const load = async () => {
-    const [items, projectList] = await Promise.all([reminderRepository.getAll(), projectRepository.getAll()])
+    const [items, projectList, customerList] = await Promise.all([reminderRepository.getAll(), projectRepository.getAll(), customerRepository.getAll()])
     setReminders(items)
     setProjects(projectList)
+    setCustomers(Object.fromEntries(customerList.map((customer) => [customer.id, customer.name])))
   }
 
   useEffect(() => { void load() }, [])
@@ -49,7 +52,7 @@ export function RemindersPage() {
     <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2">
       <label className="md:col-span-2"><span className="mb-1 block text-sm font-medium">یادآوری جدید</span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="مثلاً پیگیری پیش‌فاکتور" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-indigo-500" /></label>
       <label><span className="mb-1 block text-sm font-medium">تاریخ (شمسی)</span><JalaliDatePicker value={dueDate} onChange={setDueDate} /></label>
-      <label><span className="mb-1 block text-sm font-medium">پروژه (اختیاری)</span><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">بدون پروژه</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label>
+      <label><span className="mb-1 block text-sm font-medium">پروژه (اختیاری)</span><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">بدون پروژه</option>{projects.map((project) => <option key={project.id} value={project.id}>{projectNames[project.id]}</option>)}</select></label>
       <label className="md:col-span-2"><span className="mb-1 block text-sm font-medium">یادداشت (اختیاری)</span><input value={note} onChange={(event) => setNote(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
       {error && <p className="md:col-span-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
       <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"><Plus size={18} />{saving ? 'در حال ذخیره…' : 'ثبت یادآوری'}</button>

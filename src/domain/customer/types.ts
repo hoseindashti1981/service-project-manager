@@ -5,6 +5,7 @@ export interface Customer {
   name: string
   mobile: string
   description?: string
+  date?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }

@@ -4,6 +4,7 @@ export type ProjectStatus =
   | 'draft'
   | 'planned'
   | 'active'
+  | 'in_progress'
   | 'paused'
   | 'completed'
   | 'delivered'

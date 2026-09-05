@@ -1,3 +1,5 @@
+import { JalaliDatePicker } from '@/components/jalali-date-picker'
+import { toISODate } from '@/lib/dates'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { customerRepository } from '@/db/repositories/customer-repository'
@@ -10,6 +12,7 @@ export function CustomerDetailPage() {
   const { customerId } = useParams({ from: '/customers/$customerId' })
 
   const [customer, setCustomer] = useState<Customer | null>(null)
+  const [date, setDate] = useState(toISODate)
   const [name, setName] = useState('')
   const [mobile, setMobile] = useState('')
   const [description, setDescription] = useState('')
@@ -28,6 +31,7 @@ export function CustomerDetailPage() {
           setError('مشتری یافت نشد')
           return
         }
+        setDate(data.date || toISODate(new Date(data.createdAt)))
         setCustomer(data)
         setName(data.name)
         setMobile(data.mobile)
@@ -61,6 +65,7 @@ export function CustomerDetailPage() {
     try {
       setSaving(true)
       const updated = await customerRepository.update(customerId, {
+        date,
         name: name.trim(),
         mobile: mobile.trim(),
         description: description.trim() || undefined,
@@ -122,10 +127,11 @@ export function CustomerDetailPage() {
 
       {customer && (
         <div className="text-xs text-slate-400">
-          ایجاد شده در: {formatDateFa(customer.createdAt)}
+          ایجاد شده در: {formatDateFa(customer.date || customer.createdAt)}
         </div>
       )}
 
+      <div><p className="mb-1 text-sm">تاریخ ثبت مشتری (شمسی)</p><JalaliDatePicker label="تاریخ مشتری" value={date} onChange={setDate} /></div>
       <form onSubmit={handleSave} className="space-y-4 bg-white border border-slate-200 rounded-xl p-5">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">

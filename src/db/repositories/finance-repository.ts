@@ -1,3 +1,4 @@
+import { requireDate } from '@/lib/dates'
 import { db } from '@/db/db'
 import type { CreateInvoiceInput, CreatePaymentInput, CreateQuotationInput, FinanceLine, Invoice, Payment, Quotation } from '@/domain/finance/types'
 import type { ID, Money } from '@/types'
@@ -19,6 +20,7 @@ async function nextNumber(type: 'Q' | 'INV') {
 
 export const financeRepository = {
   async createQuotation(input: CreateQuotationInput): Promise<Quotation> {
+    requireDate(input.date)
     const timestamp = now()
     const quotation: Quotation = { ...input, status: input.status as Quotation['status'], id: crypto.randomUUID(), number: await nextNumber('Q'), lines: input.lines.map((line) => ({ ...line, id: line.id || crypto.randomUUID(), total: Math.round(line.quantity * line.unitPrice) })), total: totalLines(input.lines.map((line) => ({ ...line, total: Math.round(line.quantity * line.unitPrice) }))), createdAt: timestamp, updatedAt: timestamp }
     await db.quotations.add(quotation)
@@ -26,6 +28,7 @@ export const financeRepository = {
   },
 
   async createInvoice(input: CreateInvoiceInput): Promise<Invoice> {
+    requireDate(input.date)
     const timestamp = now()
     const lines = input.lines.map((line) => ({ ...line, id: line.id || crypto.randomUUID(), total: Math.round(line.quantity * line.unitPrice) }))
     const invoice: Invoice = { ...input, status: input.status as Invoice['status'], id: crypto.randomUUID(), number: await nextNumber('INV'), lines, total: totalLines(lines), createdAt: timestamp, updatedAt: timestamp }
@@ -42,6 +45,7 @@ export const financeRepository = {
   },
 
   async createPayment(input: CreatePaymentInput): Promise<Payment> {
+    requireDate(input.date)
     const payment: Payment = { ...input, id: crypto.randomUUID(), amount: Math.round(input.amount), createdAt: now(), updatedAt: now() }
     await db.payments.add(payment)
     if (payment.invoiceId) {

@@ -8,6 +8,7 @@ export interface Service {
   defaultUnitPrice: Money
   description?: string
   isActive: boolean
+  date?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }

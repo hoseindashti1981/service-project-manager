@@ -99,7 +99,7 @@ export function CustomersPage() {
                   )}
                 </div>
                 <span className="text-xs text-slate-400 whitespace-nowrap">
-                  {formatDateFa(customer.createdAt)}
+                  {formatDateFa(customer.date || customer.createdAt)}
                 </span>
               </div>
             </Link>

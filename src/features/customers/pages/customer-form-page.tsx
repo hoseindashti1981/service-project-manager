@@ -1,3 +1,5 @@
+import { JalaliDatePicker } from '@/components/jalali-date-picker'
+import { toISODate } from '@/lib/dates'
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { customerRepository } from '@/db/repositories/customer-repository'
@@ -6,6 +8,7 @@ import { isValidMobile, isNonEmpty } from '@/lib/validation'
 export function CustomerFormPage() {
   const navigate = useNavigate()
 
+  const [date, setDate] = useState(toISODate)
   const [name, setName] = useState('')
   const [mobile, setMobile] = useState('')
   const [description, setDescription] = useState('')
@@ -31,6 +34,7 @@ export function CustomerFormPage() {
       setLoading(true)
 
       await customerRepository.create({
+        date,
         name: name.trim(),
         mobile: mobile.trim(),
         description: description.trim() || undefined,
@@ -90,6 +94,7 @@ export function CustomerFormPage() {
           />
         </div>
 
+<div><p className="mb-1 text-sm">تاریخ ثبت مشتری (شمسی)</p><JalaliDatePicker label="تاریخ مشتری" value={date} onChange={setDate} /></div>
         {/* توضیحات */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">

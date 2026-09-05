@@ -1,3 +1,5 @@
+import { projectStatusLabels as statusLabels, projectStatusOptions } from '@/domain/project/status'
+import { useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { projectRepository } from '@/db/repositories/project-repository'
@@ -6,17 +8,8 @@ import type { Project } from '@/domain/project/types'
 import type { Customer } from '@/domain/customer/types'
 import { formatDateFa } from '@/lib/dates'
 
-const statusLabels: Record<string, string> = {
-  draft: 'پیش‌نویس',
-  planned: 'برنامه‌ریزی‌شده',
-  active: 'فعال',
-  paused: 'متوقف',
-  completed: 'تکمیل‌شده',
-  delivered: 'تحویل‌شده',
-  cancelled: 'لغو‌شده',
-}
-
 export function ProjectsPage() {
+  const { status } = useSearch({ from: '/projects' })
   const [projects, setProjects] = useState<Project[]>([])
   const [customers, setCustomers] = useState<Record<string, Customer>>({})
   const [loading, setLoading] = useState(true)
@@ -60,6 +53,7 @@ export function ProjectsPage() {
     await loadData(value)
   }
 
+  const visibleProjects = projects.filter((project) => !status || project.status === status)
   return (
     <div className="space-y-4">
       {/* هدر */}
@@ -82,6 +76,7 @@ export function ProjectsPage() {
         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
       />
 
+      <div className="flex flex-wrap gap-2"><Link to="/projects" search={{}} className={`rounded-lg border px-3 py-2 text-sm ${!status ? 'bg-indigo-600 text-white' : 'bg-white'}`}>همه</Link>{projectStatusOptions.map((item) => <Link key={item.value} to="/projects" search={{ status: item.value }} className={`rounded-lg border px-3 py-2 text-sm ${status === item.value ? 'bg-indigo-600 text-white' : 'bg-white'}`}>{item.label}</Link>)}</div>
       {/* حالت‌ها */}
       {loading && (
         <div className="text-slate-500 text-sm py-8 text-center">
@@ -95,16 +90,16 @@ export function ProjectsPage() {
         </div>
       )}
 
-      {!loading && !error && projects.length === 0 && (
+      {!loading && !error && visibleProjects.length === 0 && (
         <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
-          <p className="text-slate-500">هنوز پروژه‌ای ثبت نشده است.</p>
+          <p className="text-slate-500">پروژه‌ای در این فهرست وجود ندارد.</p>
         </div>
       )}
 
       {/* لیست پروژه‌ها */}
-      {!loading && projects.length > 0 && (
+      {!loading && visibleProjects.length > 0 && (
         <div className="space-y-3">
-          {projects.map((project) => (
+          {visibleProjects.map((project) => (
             <Link
               key={project.id}
               to="/projects/$projectId"
@@ -128,7 +123,7 @@ export function ProjectsPage() {
                     {statusLabels[project.status] || project.status}
                   </span>
                   <div className="text-xs text-slate-400 mt-2">
-                    {formatDateFa(project.createdAt)}
+                    {formatDateFa(project.startDate || project.createdAt)}
                   </div>
                 </div>
               </div>
