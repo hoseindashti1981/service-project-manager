@@ -1,3 +1,4 @@
+import { AppLock } from '@/components/app-lock'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { BarChart3, Bell, CalendarDays, ClipboardList, FolderKanban, Home, Menu, MoreHorizontal, Tags, Users, WalletCards, X } from 'lucide-react'
 import { useState } from 'react'
@@ -14,7 +15,9 @@ const navigation = [
   { to: '/services', label: 'خدمات', icon: Tags },
 ] as const
 
-export function RootLayout() {
+export function RootLayout() { return <AppLock><RootContent /></AppLock> }
+
+function RootContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isActive = (to: string) => to === '/' ? pathname === '/' : pathname.startsWith(to)
