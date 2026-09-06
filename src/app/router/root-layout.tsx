@@ -20,6 +20,7 @@ export function RootLayout() { return <AppLock><RootContent /></AppLock> }
 function RootContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const dashboard = pathname === '/'
   const isActive = (to: string) => to === '/' ? pathname === '/' : pathname.startsWith(to)
   const primaryMobile = navigation.slice(0, 3)
 
@@ -29,9 +30,9 @@ function RootContent() {
       <nav className="mt-8 space-y-1">{navigation.map((item) => <NavLink key={item.to} {...item} active={isActive(item.to)} />)}</nav>
       <p className="mt-auto rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">داده‌ها فقط روی همین دستگاه ذخیره می‌شوند.</p>
     </aside>
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:mr-64"><div className="mx-auto flex max-w-6xl items-center justify-between"><div className="lg:hidden"><Brand compact /></div><p className="hidden text-sm text-slate-500 sm:block">مدیریت پروژه و خدمات فنی</p><button onClick={() => setMobileMenuOpen(true)} aria-label="باز کردن منو" className="rounded-lg border border-slate-200 p-2 text-slate-600 lg:hidden"><Menu size={20} /></button></div></header>
+    <header className={`sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:mr-64 ${dashboard ? "max-sm:flex max-sm:h-14 max-sm:items-center max-sm:py-2 max-sm:[&>div]:w-full" : ""}`}><div className="mx-auto flex max-w-6xl items-center justify-between"><div className="lg:hidden"><Brand compact /></div><p className="hidden text-sm text-slate-500 sm:block">مدیریت پروژه و خدمات فنی</p><button onClick={() => setMobileMenuOpen(true)} aria-label="باز کردن منو" className={`rounded-lg border border-slate-200 p-2 text-slate-600 lg:hidden ${dashboard ? "max-sm:hidden" : ""}`}><Menu size={20} /></button></div></header>
     {mobileMenuOpen && <div className="fixed inset-0 z-50 bg-slate-950/30 lg:hidden" onClick={() => setMobileMenuOpen(false)}><aside className="absolute inset-y-0 right-0 w-72 bg-white p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><Brand compact /><button onClick={() => setMobileMenuOpen(false)} aria-label="بستن منو" className="rounded-lg p-2"><X size={20} /></button></div><nav className="mt-7 space-y-1">{navigation.map((item) => <NavLink key={item.to} {...item} active={isActive(item.to)} onClick={() => setMobileMenuOpen(false)} />)}</nav></aside></div>}
-    <main className="mx-auto max-w-6xl px-4 py-6 pb-24 lg:mr-64 lg:px-8 lg:pb-8"><Outlet /></main>
+    <main className={`mx-auto max-w-6xl px-4 py-6 pb-24 lg:mr-64 lg:px-8 lg:pb-8 ${dashboard ? "max-sm:px-3 max-sm:pt-3 max-sm:pb-[calc(5rem+env(safe-area-inset-bottom))]" : ""}`}><Outlet /></main>
     <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur lg:hidden">{primaryMobile.map((item) => <MobileLink key={item.to} {...item} active={isActive(item.to)} />)}<button onClick={() => setMobileMenuOpen(true)} className="flex min-h-14 flex-col items-center justify-center gap-1 text-xs text-slate-500"><MoreHorizontal size={21} /><span>بیشتر</span></button></nav>
   </div>
 }
