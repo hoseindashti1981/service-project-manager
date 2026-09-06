@@ -63,12 +63,12 @@ async function audit(projectId: string, entry: ActivityAuditEntry) {
 }
 async function validateActivity(input: CreateProjectActivityInput) {
   requireDate(input.date)
+  if (input.amount !== undefined && (!Number.isSafeInteger(input.amount) || input.amount < 0)) throw new Error('مبلغ اختیاری باید عدد صحیح و نامنفی به تومان باشد.')
   if (!input.title.trim()) throw new Error('عنوان فعالیت را وارد کنید.')
   if (input.quantity !== undefined && (!Number.isFinite(input.quantity) || input.quantity <= 0)) throw new Error('مقدار کار باید عدد مثبت باشد.')
   if (input.projectItemId) {
     const item = await db.projectItems.get(input.projectItemId)
     if (!item || item.projectId !== input.projectId) throw new Error('خدمت انتخاب‌شده متعلق به این پروژه نیست.')
-    if (input.quantity === undefined) throw new Error('مقدار انجام‌شده را وارد کنید.')
     if (input.unit !== item.unit) throw new Error('واحد فعالیت باید با خدمت پروژه یکسان باشد.')
   }
 }

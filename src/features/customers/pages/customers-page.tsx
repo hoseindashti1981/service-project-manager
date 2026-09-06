@@ -1,111 +1,38 @@
 import { useEffect, useState } from 'react'
+import { liveQuery } from 'dexie'
 import { Link } from '@tanstack/react-router'
 import { customerRepository } from '@/db/repositories/customer-repository'
 import type { Customer } from '@/domain/customer/types'
-import { formatDateFa } from '@/lib/dates'
+import { customerSearchText, phoneNumber } from '@/domain/customer/contact'
 
 export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
-
-  async function loadCustomers(query = '') {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const data = query.trim()
-        ? await customerRepository.search(query)
-        : await customerRepository.getAll()
-
-      setCustomers(data)
-    } catch (err) {
-      console.error(err)
-      setError('خطا در بارگذاری مشتریان')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    loadCustomers()
-  }, [])
-
-  async function handleSearch(value: string) {
-    setSearch(value)
-    await loadCustomers(value)
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* هدر صفحه */}
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-slate-800">مشتریان</h2>
-        <Link
-          to="/customers/new"
-          className="bg-slate-800 text-white text-sm px-4 py-2 rounded-lg"
-        >
-          + مشتری جدید
-        </Link>
-      </div>
-
-      {/* جستجو */}
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder="جستجو بر اساس نام یا موبایل..."
-        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-      />
-
-      {/* حالت‌ها */}
-      {loading && (
-        <div className="text-slate-500 text-sm py-8 text-center">
-          در حال بارگذاری...
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && customers.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
-          <p className="text-slate-500">هنوز مشتریی ثبت نشده است.</p>
-        </div>
-      )}
-
-      {/* لیست مشتریان */}
-      {!loading && customers.length > 0 && (
-        <div className="space-y-3">
-          {customers.map((customer) => (
-            <Link
-            key={customer.id}
-            to="/customers/$customerId"
-            params={{ customerId: customer.id }}
-            className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-slate-400 transition"
->
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-bold text-slate-800">{customer.name}</h3>
-                  <p className="text-sm text-slate-500 mt-1">{customer.mobile}</p>
-                  {customer.description && (
-                    <p className="text-sm text-slate-400 mt-1 line-clamp-1">
-                      {customer.description}
-                    </p>
-                  )}
-                </div>
-                <span className="text-xs text-slate-400 whitespace-nowrap">
-                  {formatDateFa(customer.date || customer.createdAt)}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+    const subscription=liveQuery(() => customerRepository.getAll()).subscribe({
+      next: rows => { setCustomers(rows); setLoading(false) },
+      error: () => { setError('خطا در بارگذاری مشتریان'); setLoading(false) },
+    })
+    return () => subscription.unsubscribe()
+  },[])
+  const query=customerSearchText(search)
+  const visible=customers.filter(customer => customerSearchText(customer.name).includes(query) || customerSearchText(customer.mobile).includes(query))
+    .sort((a,b)=>a.name.localeCompare(b.name,'fa'))
+  return <div className="space-y-4">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">دفترچه تلفن مشتریان</h2><Link to="/customers/new" className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white">+ مشتری جدید</Link></div>
+    <p className="text-sm text-slate-500">شماره‌ها در برنامه نگهداری می‌شوند. برای شماره‌گیری، روی شماره مشتری بزنید.</p>
+    <input type="search" aria-label="جستجوی مشتری" value={search} onChange={event=>setSearch(event.target.value)} placeholder="جستجو بر اساس نام یا شماره..." className="w-full rounded-lg border p-3" />
+    {loading && <p>در حال بارگذاری…</p>}
+    {error && <p role="alert">{error}</p>}
+    {!loading && !error && <p className="text-sm text-slate-500">{visible.length.toLocaleString('fa-IR')} مشتری</p>}
+    {!loading && !error && visible.length===0 && <p>{search ? 'مشتری مطابق جستجو پیدا نشد.' : 'هنوز مشتری ثبت نشده است.'}</p>}
+    {visible.map(customer=><article key={customer.id} className="space-y-3 rounded-xl border bg-white p-4">
+      <Link to="/customers/$customerId" params={{customerId:customer.id}} className="block font-bold text-indigo-700">{customer.name}</Link>
+      {phoneNumber(customer.mobile) && <a href={`tel:${phoneNumber(customer.mobile)}`} aria-label={`تماس با ${customer.name}`} className="inline-flex min-h-11 items-center gap-3 rounded-lg bg-emerald-50 px-3 text-emerald-800"><span>تماس</span><span dir="ltr">{customer.mobile}</span></a>}
+      {customer.description && <p className="break-words text-sm text-slate-500">{customer.description}</p>}
+      <Link to="/customers/$customerId" params={{customerId:customer.id}} className="block text-sm text-slate-500">مشاهده و ویرایش مشتری</Link>
+    </article>)}
+  </div>
 }

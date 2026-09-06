@@ -128,6 +128,7 @@ try {
  const serviceSelect = page.getByLabel('خدمت پروژه', { exact: true })
  await page.getByLabel('شروع اجرای پروژه با تاریخ این فعالیت و ثبت فعالیت').check()
  await serviceSelect.selectOption(`catalog:${catalogFixture.id}`)
+ await page.getByLabel('افزودن این خدمت به خدمات قیمت‌دار پروژه (اختیاری)').check()
  assert.ok(!(await serviceSelect.innerText()).includes('خدمت غیرفعال آزمون'))
  await page.getByLabel('مقدار کل خدمت در پروژه', { exact: true }).fill('۱۰')
  await page.getByLabel(/مقدار انجام‌شده/).fill('۲٫۵')

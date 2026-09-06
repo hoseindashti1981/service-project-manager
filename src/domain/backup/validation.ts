@@ -26,7 +26,7 @@ function unique(rows: Row[], where: string) {
 }
 function activity(row: Row, where: string) {
   base(row,where); field(row,'projectId',id,where); field(row,'projectItemId',id,where,true); field(row,'date',date,where); field(row,'title',id,where)
-  field(row,'quantity',number,where,true); field(row,'unit',text,where,true); field(row,'note',text,where,true)
+  field(row,'amount',money,where,true); field(row,'quantity',number,where,true); field(row,'unit',text,where,true); field(row,'note',text,where,true)
 }
 function validateRow(table: BackupTable, row: Row, where: string) {
   base(row,where)

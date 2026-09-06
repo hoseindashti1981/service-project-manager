@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/workflows.browser.mjs && node tests/project-workflow.browser.mjs && node tests/backup.browser.mjs",
+    "test:browser": "node tests/workflows.browser.mjs && node tests/project-workflow.browser.mjs && node tests/backup.browser.mjs && node tests/contacts-diary.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

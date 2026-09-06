@@ -1,3 +1,4 @@
+import { phoneNumber } from '@/domain/customer/contact'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate } from '@/lib/dates'
 import { useEffect, useState } from 'react'
@@ -125,6 +126,7 @@ export function CustomerDetailPage() {
         </button>
       </div>
 
+      {customer && <a href={`tel:${phoneNumber(customer.mobile)}`} className="inline-flex min-h-11 items-center rounded-lg bg-emerald-50 px-4 text-emerald-800">تماس با مشتری: <span dir="ltr">{customer.mobile}</span></a>}
       {customer && (
         <div className="text-xs text-slate-400">
           ایجاد شده در: {formatDateFa(customer.date || customer.createdAt)}
