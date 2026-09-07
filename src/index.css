@@ -17,6 +17,10 @@ body {
   color: #0f172a;
 }
 
+.project-map-pin { font-size: 30px; line-height: 40px; }
+.project-map .leaflet-control-zoom a { width: 44px; height: 44px; line-height: 44px; }
+.project-map .leaflet-control-attribution { font-size: 11px; }
+
 button,
 input,
 select,

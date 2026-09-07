@@ -1,5 +1,6 @@
+import { LocationField,type ProjectPoint } from '@/components/location-field'
 import { ProjectPhotos } from '../components/project-photos'
-import { ProjectLocation } from '../components/project-location'
+
 import { ProjectWorkflow } from '../components/project-workflow'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, requireDate } from '@/lib/dates'
@@ -30,6 +31,7 @@ export function ProjectDetailPage() {
   const [deliveryDate, setDeliveryDate] = useState('')
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
+  const [point,setPoint] = useState<ProjectPoint>()
   const [workType, setWorkType] = useState('')
   const [contractAmount, setContractAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -63,6 +65,7 @@ export function ProjectDetailPage() {
         setDeliveryDate(proj.deliveryDate || '')
         setTitle(proj.title)
         setAddress(proj.address || '')
+        setPoint(proj.latitude!==undefined&&proj.longitude!==undefined?{latitude:proj.latitude,longitude:proj.longitude}:undefined)
         setWorkType(proj.workType || '')
         setContractAmount(String(proj.contractAmount || ''))
         setDescription(proj.description || '')
@@ -104,6 +107,7 @@ export function ProjectDetailPage() {
         deliveryDate: deliveryDate || undefined,
         title: title.trim(),
         address: address.trim() || undefined,
+        latitude: point?.latitude, longitude: point?.longitude,
         workType: workType.trim() || undefined,
         contractAmount: Number(contractAmount) || 0,
         description: description.trim() || undefined,
@@ -175,7 +179,7 @@ export function ProjectDetailPage() {
       {project && <FinancialPanel projectId={project.id} />}
 
       {project && <ProjectPhotos projectId={project.id}/>}
-      {project && <ProjectLocation project={project} onChange={setProject}/>}
+
 
       <form onSubmit={handleSave} className="space-y-4 bg-white border border-slate-200 rounded-xl p-5">
         {/* مشتری */}
@@ -216,11 +220,13 @@ export function ProjectDetailPage() {
           </label>
           <input
             type="text"
+            aria-label="آدرس پروژه"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
           />
         </div>
+        <LocationField point={point} onChange={setPoint} disabled={saving}/>
 
         {/* نوع کار */}
         <div>

@@ -186,7 +186,7 @@ export function CustomerDetailPage() {
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3"><button type="button" disabled={saving} onClick={()=>navigate({to:'/customers'})} className="min-h-11 rounded-lg border px-4">انصراف</button>
           <button
             type="submit"
             disabled={saving}

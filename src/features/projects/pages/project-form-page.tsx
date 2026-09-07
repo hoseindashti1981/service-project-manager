@@ -1,3 +1,4 @@
+import { LocationField,type ProjectPoint } from '@/components/location-field'
 import { newProjectStatuses as statusOptions } from '@/domain/project/status'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, requireDate } from '@/lib/dates'
@@ -20,6 +21,7 @@ export function ProjectFormPage() {
   const [executionStartDate, setExecutionStartDate] = useState(toISODate)
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
+  const [point,setPoint] = useState<ProjectPoint>()
   const [workType, setWorkType] = useState('')
   const [contractAmount, setContractAmount] = useState('')
   const [status, setStatus] = useState<ProjectStatus>('draft')
@@ -65,6 +67,7 @@ export function ProjectFormPage() {
         executionStartDate: status === 'in_progress' ? executionStartDate : undefined,
         title: title.trim(),
         address: address.trim() || undefined,
+        latitude: point?.latitude, longitude: point?.longitude,
         workType: workType.trim() || undefined,
         contractAmount: Number(contractAmount) || 0,
         status,
@@ -137,12 +140,14 @@ export function ProjectFormPage() {
           </label>
           <input
             type="text"
+            aria-label="آدرس پروژه"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="آدرس محل پروژه"
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
           />
         </div>
+        <LocationField point={point} onChange={setPoint} disabled={loading}/>
 
         {/* نوع کار */}
         <div>
