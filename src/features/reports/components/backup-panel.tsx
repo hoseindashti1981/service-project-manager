@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { backupRepository } from '@/db/repositories/backup-repository'
 import { backupTables, backupTableLabels, type BackupPreview, type BackupData } from '@/domain/backup/types'
-import { toISODate } from '@/lib/dates'
+import { backupFilename } from '@/lib/backup-filename'
 
 const MAX_FILE_BYTES = 200 * 1024 * 1024
 const formatTime = (value: string) => new Intl.DateTimeFormat('fa-IR', { dateStyle:'medium',timeStyle:'short' }).format(new Date(value))
 function download(backup: BackupData, prefix: string) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}))
   const link = document.createElement('a')
-  link.href=url; link.download=`${prefix}-${toISODate()}-${Date.now()}.json`
+  link.href=url; link.download=backupFilename(prefix)
   document.body.appendChild(link); link.click(); link.remove()
   setTimeout(() => URL.revokeObjectURL(url),60000)
 }

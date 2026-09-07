@@ -121,7 +121,7 @@ export function ProjectsPage() {
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
                     {statusLabels[project.status] || project.status}
                   </span>
-                  <Link to="/projects/$projectId" params={{projectId:project.id}} hash="photos" className="mt-2 block min-h-11 rounded-lg bg-violet-50 px-2 py-2 text-sm text-violet-800">🖼️ گالری عکس‌ها</Link>
+                  <Link to="/projects/$projectId/photos" params={{projectId:project.id}} className="mt-2 block min-h-11 rounded-lg bg-violet-50 px-2 py-2 text-sm text-violet-800">🖼️ گالری عکس‌ها</Link>
                   <div className="text-xs text-slate-400 mt-2">
                     {formatDateFa(project.startDate || project.createdAt)}
                   </div>

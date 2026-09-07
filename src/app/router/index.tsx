@@ -1,3 +1,4 @@
+import {ProjectGalleryPage} from '@/features/projects/pages/project-gallery-page'
 import { projectStatusOptions } from '@/domain/project/status'
 import { SettingsPage } from '@/features/settings/settings-page'
 import { HelpPage } from '@/components/help'
@@ -29,6 +30,7 @@ const customerDetailRoute = createRoute({ getParentRoute: () => rootRoute, path:
 const projectsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects', validateSearch: (search: Record<string, unknown>): { status?: string } => ({ status: (search.status === 'active' || projectStatusOptions.some((item) => item.value === search.status)) ? String(search.status) : undefined }), component: ProjectsPage })
 const projectsNewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/new', component: ProjectFormPage })
 const projectDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/$projectId', component: ProjectDetailPage })
+const projectGalleryRoute=createRoute({getParentRoute:()=>rootRoute,path:'/projects/$projectId/photos',component:ProjectGalleryPage})
 const todayActivitiesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/activities/today', component: TodayActivitiesPage })
 const financeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/finance', component: FinancePage })
 const reportsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reports', component: ReportsPage })
@@ -39,7 +41,7 @@ const servicesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ser
 const routeTree = rootRoute.addChildren([
   settingsRoute,helpRoute,
   indexRoute, dbTestRoute, customersRoute, customersNewRoute, customerDetailRoute,
-  projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute, servicesRoute,
+  projectsRoute, projectsNewRoute, projectDetailRoute, projectGalleryRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute, servicesRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL === '/'

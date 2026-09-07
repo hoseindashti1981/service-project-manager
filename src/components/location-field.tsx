@@ -1,3 +1,4 @@
+import {LocationPermissionHelp} from './location-permission-help'
 import {useCallback,useEffect,useRef,useState} from 'react'
 import {map as createMap,tileLayer,marker,divIcon,type Map,type Marker} from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -50,5 +51,6 @@ export function LocationField({point,onChange,disabled=false}:{point?:ProjectPoi
     {open&&!disabled&&<PointMap point={point} onPick={pick}/>}
     <p className="text-xs text-slate-600">مختصات همراه پروژه ذخیره می‌شود. آدرس نوشتاری را برای پلاک و توضیحات تکمیل کنید؛ انتخاب موقعیت متن آدرس را پاک نمی‌کند.</p>
     {error&&<p role="alert" className="text-sm text-rose-700">{error}</p>}
+    <LocationPermissionHelp/>
   </div>
 }
