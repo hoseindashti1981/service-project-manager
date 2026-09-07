@@ -1,4 +1,6 @@
 import {LocationPermissionHelp} from './location-permission-help'
+import {CoordinateEntry} from './coordinate-entry'
+import {isStandalone} from '@/lib/pwa-display'
 import {useCallback,useEffect,useRef,useState} from 'react'
 import {map as createMap,tileLayer,marker,divIcon,type Map,type Marker} from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -29,7 +31,7 @@ function PointMap({point,onPick}:{point?:ProjectPoint;onPick:(point:ProjectPoint
 }
 
 export function LocationField({point,onChange,disabled=false}:{point?:ProjectPoint;onChange:(point?:ProjectPoint)=>void;disabled?:boolean}) {
-  const [open,setOpen]=useState(false),[tracking,setTracking]=useState(false),[accuracy,setAccuracy]=useState<number>(),[error,setError]=useState('')
+  const [open,setOpen]=useState(false),[tracking,setTracking]=useState(false),[accuracy,setAccuracy]=useState<number>(),[error,setError]=useState(''),[copyMessage,setCopyMessage]=useState('')
   const watch=useRef<number|null>(null),generation=useRef(0),wrapper=useRef<HTMLDivElement>(null)
   const clear=useCallback(()=>{generation.current++;if(watch.current!==null){navigator.geolocation.clearWatch(watch.current);watch.current=null}},[])
   useEffect(()=>{const stop=()=>{clear();setTracking(false)},pause=()=>{if(document.hidden)stop()},form=wrapper.current?.closest('form');form?.addEventListener('submit',stop);document.addEventListener('visibilitychange',pause);return()=>{form?.removeEventListener('submit',stop);document.removeEventListener('visibilitychange',pause);clear()}},[clear])
@@ -41,7 +43,7 @@ export function LocationField({point,onChange,disabled=false}:{point?:ProjectPoi
     watch.current=navigator.geolocation.watchPosition(position=>{
       if(request!==generation.current)return
       onChange({latitude:position.coords.latitude,longitude:position.coords.longitude});setAccuracy(Math.round(position.coords.accuracy))
-    },error=>{if(request!==generation.current)return;stop();setError(error.code===1?'اجازه موقعیت‌یابی داده نشد؛ از نقشه انتخاب کنید یا اجازه را در تنظیمات گوشی فعال کنید.':'موقعیت دریافت نشد؛ GPS و دسترسی مکان گوشی را بررسی و دوباره تلاش کنید.')},{enableHighAccuracy:true,maximumAge:0,timeout:15000})
+    },error=>{if(request!==generation.current)return;stop();setError(error.code===1?(isStandalone()?'دسترسی موقعیت در نسخه نصب‌شده رد شد (کد ۱). اگر در Safari کار می‌کند، مجوز مرورگر مشکل این نسخه را حل نکرده است. از نقشه انتخاب کنید یا مختصات مرورگر را در بخش «واردکردن مختصات» بچسبانید.':'دسترسی موقعیت این صفحه رد شد (کد ۱)؛ اجازه مکان سایت را بررسی کنید یا از نقشه انتخاب کنید.'):error.code===3?'مهلت دریافت موقعیت تمام شد (کد ۳)؛ دوباره در فضای باز امتحان کنید.':'موقعیت دستگاه در دسترس نیست (کد ۲)؛ مکان‌یابی گوشی را بررسی و دوباره امتحان کنید.')},{enableHighAccuracy:true,maximumAge:0,timeout:15000})
   }
   function pick(value:ProjectPoint){stop();setAccuracy(undefined);setError('');onChange(value)}
   return <div ref={wrapper} className="space-y-3 rounded-xl border border-sky-200 bg-sky-50/40 p-3">
@@ -51,6 +53,9 @@ export function LocationField({point,onChange,disabled=false}:{point?:ProjectPoi
     {open&&!disabled&&<PointMap point={point} onPick={pick}/>}
     <p className="text-xs text-slate-600">مختصات همراه پروژه ذخیره می‌شود. آدرس نوشتاری را برای پلاک و توضیحات تکمیل کنید؛ انتخاب موقعیت متن آدرس را پاک نمی‌کند.</p>
     {error&&<p role="alert" className="text-sm text-rose-700">{error}</p>}
+    {point&&<><button type="button" disabled={disabled} className="min-h-11 rounded-lg border px-3 text-sm" onClick={async()=>{try{await navigator.clipboard.writeText(`${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}`);setCopyMessage('مختصات کپی شد.')}catch{setCopyMessage('کپی خودکار انجام نشد؛ مقدار زیر را انتخاب و دستی کپی کنید.')}}}>کپی موقعیت انتخاب‌شده</button><input aria-label="موقعیت قابل کپی" readOnly dir="ltr" className="w-full rounded-lg border p-2" value={`${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}`} onFocus={e=>e.target.select()}/></>}
+    {copyMessage&&<p role="status" className="text-sm">{copyMessage}</p>}
+    <CoordinateEntry disabled={disabled} onPick={pick}/>
     <LocationPermissionHelp/>
   </div>
 }

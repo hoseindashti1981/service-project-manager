@@ -43,7 +43,7 @@ try{
  await page.getByLabel('افزودن عکس',{exact:true}).setInputFiles([{name:'one.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')},{name:'broken.png',mimeType:'image/png',buffer:Buffer.from('bad')},{name:'two.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')}])
  await page.getByText('۲ عکس ذخیره شد؛ ۱ عکس ناموفق بود.',{exact:true}).waitFor();assert.equal(await page.evaluate(async(id)=>(await (await import('/src/db/db.ts')).db.photos.where('projectId').equals(id).count()),project.id),2)
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
- await page.getByRole('button',{name:'دریافت موقعیت زنده گوشی'}).click();await page.evaluate(()=>window.locationError({code:1}));await page.getByRole('alert').filter({hasText:'اجازه موقعیت‌یابی داده نشد'}).waitFor()
+ await page.getByRole('button',{name:'دریافت موقعیت زنده گوشی'}).click();await page.evaluate(()=>window.locationError({code:1}));await page.getByRole('alert').filter({hasText:'دسترسی موقعیت این صفحه رد شد (کد ۱)'}).waitFor()
  assert.deepEqual(errors,[])
  console.log('Tomorrow reminder rollover, notification permission/deduplication, completion, customer cancel, live GPS, map create/edit and partial multi-photo upload passed.')
 }finally{await browser.close()}
