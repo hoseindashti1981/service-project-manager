@@ -1,0 +1,7 @@
+import {useEffect,useState} from 'react'
+import {isStandalone} from '@/lib/pwa-display'
+export function PwaStatus(){
+ const [standalone,setStandalone]=useState(isStandalone)
+ useEffect(()=>{const media=window.matchMedia('(display-mode: standalone)'),update=()=>setStandalone(isStandalone());media.addEventListener('change',update);window.addEventListener('pageshow',update);return()=>{media.removeEventListener('change',update);window.removeEventListener('pageshow',update)}},[])
+ return <section aria-label="وضعیت نصب برنامه" className="space-y-3 rounded-xl border bg-white p-4"><h2 className="font-bold">نصب لاین‌یار</h2><p role="status">{standalone?'این پنجره در حالت اپ مستقل باز شده است.':'این پنجره داخل مرورگر باز شده است؛ نسخه نصب‌شده را از آیکن صفحه اصلی باز کنید.'}</p><p className="text-sm">نام نصب‌های قدیمی ممکن است «مدیریت پروژه» باشد؛ آن نام یا نامی را که هنگام نصب انتخاب کرده‌اید نیز در تنظیمات گوشی جستجو کنید.</p><details><summary className="min-h-11 cursor-pointer">راهنمای نصب در آیفون</summary><p className="text-sm leading-7">در Safari، اشتراک‌گذاری و سپس Add to Home Screen را بزنید. در iOS 26 و جدیدتر، Open as Web App روشن باشد و نام «لاین‌یار» را انتخاب کنید. بازشدن این پنجره به‌صورت مستقل به معنی تضمین نمایش در Settings → Apps نیست؛ فهرست و مجوزها را iOS مدیریت می‌کند.</p><p className="mt-2 text-sm leading-7">پیش از حذف یا نصب مجدد، از داخل نسخه‌ای که اطلاعات شما را دارد بکاپ کامل بگیرید و فایلش را خارج از برنامه نگه دارید.</p></details></section>
+}

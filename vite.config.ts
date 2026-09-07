@@ -19,8 +19,9 @@ export default defineConfig(({ mode }) => {
         workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'], importScripts: ['reminder-notification.js'] },
         includeAssets: ['favicon.svg', 'apple-touch-icon-v050.png'],
         manifest: {
-          name: 'مدیریت پروژه و خدمات فنی',
-          short_name: 'مدیریت پروژه',
+          id: base,
+          name: 'لاین‌یار',
+          short_name: 'لاین‌یار',
           description: 'اپلیکیشن مدیریت پروژه‌ها و خدمات فنی',
           theme_color: '#0f172a',
           background_color: '#ffffff',
