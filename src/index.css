@@ -23,3 +23,21 @@ select,
 textarea {
   font: inherit;
 }
+
+@media (max-width: 640px) {
+  input, textarea, select { font-size: 16px !important; }
+}
+
+.document-sheet { font-family: Vazirmatn, Tahoma, sans-serif; background: white; color: #0f172a; padding: 24px; }
+[data-app-shell] .bg-indigo-600, [data-app-shell] .bg-indigo-700 { background-color: var(--brand-color); }
+.document-sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.document-sheet th,.document-sheet td { padding: 8px 4px; border-bottom: 1px solid #ddd; overflow-wrap: anywhere; }
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body * { visibility: hidden; }
+  .document-sheet,.document-sheet * { visibility: visible; }
+  .document-sheet { position: absolute; inset: 0; width: 100%; padding: 0; }
+  .document-sheet tr { break-inside: avoid; }
+  .document-sheet thead { display: table-header-group; }
+  .no-print { display: none !important; }
+}

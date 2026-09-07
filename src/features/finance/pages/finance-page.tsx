@@ -1,69 +1,26 @@
-import { JalaliDatePicker } from '@/components/jalali-date-picker'
-import { toISODate, formatDateFa } from '@/lib/dates'
-import { useEffect, useState } from 'react'
-import { customerRepository } from '@/db/repositories/customer-repository'
-import { projectRepository } from '@/db/repositories/project-repository'
-import { financeRepository } from '@/db/repositories/finance-repository'
-import type { Customer } from '@/domain/customer/types'
-import type { Project } from '@/domain/project/types'
-import type { Invoice, Payment, Quotation } from '@/domain/finance/types'
-import { formatMoney } from '@/lib/money'
-import { downloadDocumentPdf } from '@/lib/document-pdf'
-
-type Kind = 'quotation' | 'invoice' | 'payment' | null
-
-
-export function FinancePage() {
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [projects, setProjects] = useState<Project[]>([])
-  const [quotations, setQuotations] = useState<Quotation[]>([])
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [date, setDate] = useState(toISODate)
-  const [kind, setKind] = useState<Kind>(null)
-  const [error, setError] = useState('')
-
-  const load = async () => {
-    const [c, p, q, i, pay] = await Promise.all([customerRepository.getAll(), projectRepository.getAll(), financeRepository.getQuotations(), financeRepository.getInvoices(), financeRepository.getPayments()])
-    setCustomers(c); setProjects(p); setQuotations(q); setInvoices(i); setPayments(pay)
-  }
-  useEffect(() => { void load() }, [])
-
-  const received = payments.reduce((sum, item) => sum + item.amount, 0)
-  const billed = invoices.filter((item) => item.status !== 'void').reduce((sum, item) => sum + item.total, 0)
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const data = new FormData(event.currentTarget)
-    const customerId = String(data.get('customerId')); const projectId = String(data.get('projectId') || '') || undefined
-    if (!customerId || !kind) { setError('مشتری را انتخاب کنید'); return }
-    try {
-      if (kind === 'payment') await financeRepository.createPayment({ customerId, projectId, invoiceId: String(data.get('invoiceId') || '') || undefined, amount: Number(data.get('amount')), date: String(data.get('date')), method: String(data.get('method')) as Payment['method'], note: String(data.get('note') || '') })
-      else {
-        const quantity = Number(data.get('quantity')); const unitPrice = Number(data.get('unitPrice'))
-        const input = { customerId, projectId, date: String(data.get('date')), status: (kind === 'quotation' ? 'draft' : 'issued') as 'draft' | 'issued', lines: [{ id: '', description: String(data.get('description')), quantity, unitPrice, total: Math.round(quantity * unitPrice) }], note: String(data.get('note') || '') }
-        if (kind === 'quotation') await financeRepository.createQuotation(input)
-        else await financeRepository.createInvoice(input)
-      }
-      setKind(null); setError(''); await load()
-    } catch { setError('ذخیره‌سازی ناموفق بود') }
-  }
-
-  return <div className="max-w-4xl space-y-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold">مالی</h2><p className="text-sm text-slate-500">مانده کل: {formatMoney(billed - received)}</p></div><div className="flex gap-2"><button onClick={() => { setDate(toISODate()); setKind('quotation') }} className="rounded-lg border px-3 py-2 text-sm">پیش‌فاکتور</button><button onClick={() => { setDate(toISODate()); setKind('invoice') }} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-white">فاکتور</button><button onClick={() => { setDate(toISODate()); setKind('payment') }} className="rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white">پرداخت</button></div></div>
-    <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">فاکتور معتبر</p><b>{formatMoney(billed)}</b></div><div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">دریافتی</p><b>{formatMoney(received)}</b></div></div>
-    {kind && <form onSubmit={submit} className="grid gap-3 rounded-xl border bg-white p-4"><b>{kind === 'quotation' ? 'پیش‌فاکتور جدید' : kind === 'invoice' ? 'فاکتور جدید' : 'ثبت پرداخت'}</b><select name="customerId" required className="rounded-lg border p-2"><option value="">انتخاب مشتری</option>{customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><select name="projectId" className="rounded-lg border p-2"><option value="">بدون پروژه</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.title} — {customers.find((customer) => customer.id === p.customerId)?.name || 'مشتری نامشخص'}</option>)}</select>{kind === 'payment' ? <><select name="invoiceId" className="rounded-lg border p-2"><option value="">بدون اتصال به فاکتور</option>{invoices.filter((i) => i.status !== 'void').map((i) => <option key={i.id} value={i.id}>{i.number}</option>)}</select><input name="amount" required type="number" min="1" placeholder="مبلغ تومان" className="rounded-lg border p-2"/><select name="method" className="rounded-lg border p-2"><option value="transfer">واریز</option><option value="cash">نقدی</option><option value="card">کارت</option><option value="cheque">چک</option></select></> : <><input name="description" required placeholder="شرح ردیف" className="rounded-lg border p-2"/><div className="grid grid-cols-2 gap-2"><input name="quantity" required type="number" min="1" defaultValue="1" className="rounded-lg border p-2"/><input name="unitPrice" required type="number" min="0" placeholder="قیمت واحد" className="rounded-lg border p-2"/></div></>}<div><p className="mb-1 text-sm">تاریخ سند (شمسی)</p><JalaliDatePicker name="date" label="تاریخ سند" value={date} onChange={setDate} /></div><input name="note" placeholder="یادداشت" className="rounded-lg border p-2"/><button className="rounded-lg bg-slate-800 p-2 text-white">ذخیره</button></form>}
-    {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-    <Balances customers={customers} projects={projects} />
-    <Records invoices={invoices} payments={payments} quotations={quotations} refresh={load} />
-  </div>
-}
-
-function Balances({ customers, projects }: { customers: Customer[]; projects: Project[] }) {
-  const [balances, setBalances] = useState<Record<string, number>>({})
-  useEffect(() => { void (async () => { const entries = await Promise.all([...customers.map(async (item) => [item.id, await financeRepository.balanceForCustomer(item.id)] as const), ...projects.map(async (item) => [item.id, await financeRepository.balanceForProject(item.id)] as const)]); setBalances(Object.fromEntries(entries)) })() }, [customers, projects])
-  return <section className="space-y-2"><h3 className="font-bold">ماندهٔ حساب</h3>{customers.map((item) => <p key={item.id} className="rounded-lg border bg-white p-3 text-sm">مشتری: {item.name} — {formatMoney(balances[item.id] || 0)}</p>)}{projects.map((item) => <p key={item.id} className="rounded-lg border bg-white p-3 text-sm">پروژه: {item.title} — {formatMoney(balances[item.id] || 0)}</p>)}</section>
-}
-
-function Records({ invoices, payments, quotations, refresh }: { invoices: Invoice[]; payments: Payment[]; quotations: Quotation[]; refresh: () => Promise<void> }) {
-  return <section className="space-y-2"><h3 className="font-bold">اسناد</h3>{invoices.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-white p-3 text-sm"><span>{item.number} — {formatDateFa(item.date)} — {formatMoney(item.total)} — {item.status}</span><span className="flex gap-3"><button onClick={() => void downloadDocumentPdf('فاکتور', item.number, item.date, item.total, item.lines)} className="text-indigo-600">PDF</button>{item.status !== 'void' && <button onClick={async () => { await financeRepository.voidInvoice(item.id, 'ابطال توسط کاربر'); await refresh() }} className="text-red-600">ابطال</button>}</span></div>)}{payments.map((item) => <p key={item.id} className="rounded-lg border bg-white p-3 text-sm">پرداخت {formatDateFa(item.date)} — {formatMoney(item.amount)}</p>)}{quotations.map((item) => <div key={item.id} className="flex justify-between rounded-lg border bg-white p-3 text-sm"><span>{item.number} — {formatDateFa(item.date)} — {formatMoney(item.total)}</span><button onClick={() => void downloadDocumentPdf('پیش‌فاکتور', item.number, item.date, item.total, item.lines)} className="text-indigo-600">PDF</button></div>)}</section>
+import {useBusiness} from '@/domain/use-business'
+import {useEffect,useState,type FormEvent} from 'react'
+import {liveQuery} from 'dexie'
+import {Link} from '@tanstack/react-router'
+import {db} from '@/db/db'
+import {financeRepository} from '@/db/repositories/finance-repository'
+import {AccountCard} from '@/components/account-card'
+import {DocumentEditor} from '../document-editor'
+import {DocumentPreview} from '../document-preview'
+import {JalaliDatePicker} from '@/components/jalali-date-picker'
+import {formatDateFa,toISODate} from '@/lib/dates'
+import {formatMoney} from '@/lib/money'
+import {paymentMethods} from '@/domain/finance/account'
+import type {Project} from '@/domain/project/types'
+import type {Customer} from '@/domain/customer/types'
+import type {Invoice,Quotation,Payment} from '@/domain/finance/types'
+const documentStatus:Record<string,string>={draft:'پیش‌نویس',issued:'صادرشده',paid:'تسویه‌شده',void:'باطل‌شده',sent:'ارسال‌شده',accepted:'تأییدشده',rejected:'ردشده'}
+export function FinancePage(){
+ const business=useBusiness()
+ const [data,setData]=useState({projects:[] as Project[],customers:[] as Customer[],invoices:[] as Invoice[],quotations:[] as Quotation[],payments:[] as Payment[]}),[kind,setKind]=useState<'invoice'|'quotation'|'payment'|null>(null),[preview,setPreview]=useState<{doc:Invoice|Quotation;kind:'invoice'|'quotation'}|null>(null),[editing,setEditing]=useState<Invoice|Quotation>(),[date,setDate]=useState(toISODate),[customerId,setCustomer]=useState(''),[projectId,setProject]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ useEffect(()=>{const s=liveQuery(async()=>{const [projects,customers,invoices,quotations,payments]=await Promise.all([db.projects.toArray(),db.customers.toArray(),financeRepository.getInvoices(),financeRepository.getQuotations(),financeRepository.getPayments()]);return {projects,customers,invoices,quotations,payments}}).subscribe({next:setData,error:()=>setError('خواندن اطلاعات مالی ناموفق بود.')});return()=>s.unsubscribe()},[])
+ const customerName=(id:string)=>data.customers.find(c=>c.id===id)?.name||'مشتری حذف‌شده'
+ async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();if(busy)return;setBusy(true);setError('');const f=new FormData(e.currentTarget);try{await financeRepository.createPayment({customerId,projectId:projectId||undefined,invoiceId:String(f.get('invoiceId')||'')||undefined,amount:Number(f.get('amount')),date,method:String(f.get('method')) as Payment['method'],note:String(f.get('note')||'')});setKind(null)}catch(e){setError(String(e))}finally{setBusy(false)}}
+ if(preview)return <DocumentPreview {...preview} onBack={()=>setPreview(null)} onEdit={()=>{setEditing(preview.doc);setKind(preview.kind);setPreview(null)}}/>
+ return <div className="space-y-5 max-w-4xl"><h1 className="text-xl font-bold">مالی</h1><AccountCard title="جمع حساب‌ها"/><div className="flex flex-wrap gap-3">{([['quotation','پیش‌فاکتور'],['invoice','فاکتور'],['payment','پرداخت']] as const).map(([value,label])=><button key={value} className="min-h-11 border rounded-xl bg-white px-3" onClick={()=>{setKind(value);setEditing(undefined);setDate(toISODate());setError('')}}>{label}</button>)}</div>{(kind==='invoice'||kind==='quotation')&&<DocumentEditor kind={kind} customers={data.customers} projects={data.projects} existing={editing} onCancel={()=>setKind(null)} onSave={doc=>{setPreview({doc:{...doc,business:doc.business||business,customerSnapshot:doc.customerSnapshot||{name:customerName(doc.customerId),mobile:data.customers.find(c=>c.id===doc.customerId)?.mobile||''},projectSnapshot:doc.projectSnapshot||data.projects.find(p=>p.id===doc.projectId)?.title,projectAddress:doc.projectAddress||data.projects.find(p=>p.id===doc.projectId)?.address},kind});setKind(null);setEditing(undefined)}}/>}{kind==='payment'&&<form onSubmit={submit} className="space-y-3 border rounded-xl bg-white p-4"><h2 className="font-bold">ثبت پرداخت</h2><select aria-label="مشتری پرداخت" name="customerId" required className="w-full border rounded p-2" value={customerId} onChange={e=>{setCustomer(e.target.value);setProject('')}}><option value="">انتخاب مشتری</option>{data.customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><select aria-label="پروژه پرداخت" name="projectId" className="w-full border rounded p-2" value={projectId} onChange={e=>setProject(e.target.value)}><option value="">بدون پروژه</option>{data.projects.filter(p=>p.customerId===customerId).map(p=><option key={p.id} value={p.id}>{p.title} — {customerName(p.customerId)}</option>)}</select><select name="invoiceId" aria-label="فاکتور پرداخت" className="w-full border rounded p-2"><option value="">بدون اتصال به فاکتور</option>{data.invoices.filter(i=>i.customerId===customerId&&!['void','draft'].includes(i.status)&&i.projectId===(projectId||undefined)).map(i=><option key={i.id} value={i.id}>{i.number}</option>)}</select><input name="amount" aria-label="مبلغ پرداخت" type="number" min="1" required placeholder="مبلغ تومان" className="w-full border rounded p-2"/><select name="method" className="w-full border rounded p-2">{Object.entries(paymentMethods).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><JalaliDatePicker name="date" label="تاریخ سند" value={date} onChange={setDate}/><input name="note" placeholder="یادداشت" className="w-full border rounded p-2"/><button disabled={busy} className="min-h-11 bg-emerald-700 text-white rounded px-3">ذخیره</button><button type="button" onClick={()=>setKind(null)} className="min-h-11 px-3">انصراف</button></form>}{error&&<p role="alert">{error}</p>}<section className="space-y-3"><h2 className="font-bold">حساب پروژه‌ها</h2>{data.projects.map(p=><details key={p.id} className="rounded-xl border bg-white p-3"><summary className="min-h-11 cursor-pointer">{p.title} — {customerName(p.customerId)}</summary><AccountCard projectId={p.id}/><Link to="/projects/$projectId" params={{projectId:p.id}} className="block min-h-11 text-indigo-700">ریز حساب پروژه</Link></details>)}</section><section className="space-y-3"><h2 className="font-bold">حساب مشتریان</h2>{data.customers.map(c=><details key={c.id} className="rounded-xl border bg-white p-3"><summary className="min-h-11 cursor-pointer">{c.name}</summary><AccountCard customerId={c.id}/><Link to="/customers/$customerId" params={{customerId:c.id}}>جزئیات مشتری</Link></details>)}</section><section className="space-y-3"><h2 className="font-bold">اسناد</h2>{[...data.invoices.map(doc=>({doc,kind:'invoice' as const})),...data.quotations.map(doc=>({doc,kind:'quotation' as const}))].map(({doc,kind})=><article key={doc.id} className="rounded-xl border bg-white p-3"><p>{doc.number} · {customerName(doc.customerId)} · {formatDateFa(doc.date)}</p><p>{formatMoney(doc.total)} · {documentStatus[doc.status]}</p><button className="min-h-11 text-indigo-700" onClick={()=>setPreview({doc:{...doc,business:doc.business||business,customerSnapshot:doc.customerSnapshot||{name:customerName(doc.customerId),mobile:data.customers.find(c=>c.id===doc.customerId)?.mobile||''},projectSnapshot:doc.projectSnapshot||data.projects.find(p=>p.id===doc.projectId)?.title,projectAddress:doc.projectAddress||data.projects.find(p=>p.id===doc.projectId)?.address},kind})}>پیش‌نمایش</button>{kind==='invoice'&&doc.status!=='void'&&<button className="min-h-11 px-3 text-rose-700" onClick={async()=>{const reason=prompt('دلیل ابطال فاکتور:');if(!reason)return;try{await financeRepository.voidInvoice(doc.id,reason)}catch(e){setError(String(e))}}}>ابطال</button>}</article>)}</section><section className="space-y-3"><h2 className="font-bold">ریز دریافتی‌ها</h2>{data.payments.map(p=><article key={p.id} className="rounded-xl border bg-white p-3"><b>دریافت {formatMoney(p.amount)}</b><p>{customerName(p.customerId)} · {data.projects.find(x=>x.id===(p.projectId||data.invoices.find(i=>i.id===p.invoiceId&&i.customerId===p.customerId)?.projectId))?.title||'بدون پروژه'}</p><p>{formatDateFa(p.date)} · {paymentMethods[p.method]}</p>{p.note&&<p>{p.note}</p>}</article>)}</section></div>
 }

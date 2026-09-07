@@ -9,7 +9,7 @@ export const projectStatusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'cancelled', label: 'لغوشده' },
 ]
 export const newProjectStatuses = projectStatusOptions.filter((item) => ['draft', 'planned', 'in_progress'].includes(item.value))
-export const dashboardStatuses: ProjectStatus[] = ['draft', 'planned', 'in_progress', 'paused', 'completed']
+export const dashboardStatuses: ProjectStatus[] = ['draft', 'planned', 'in_progress', 'paused', 'completed','delivered']
 export const projectStatusLabels: Record<string, string> = { ...Object.fromEntries(projectStatusOptions.map((item) => [item.value, item.label])), active: 'فعال قدیمی؛ نیازمند بررسی' }
 export const executionDeadlineStatuses: ProjectStatus[] = ['draft', 'planned', 'in_progress', 'paused', 'active']
 export const transitions: Record<ProjectStatus, ProjectStatus[]> = {

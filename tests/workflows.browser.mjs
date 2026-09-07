@@ -9,7 +9,7 @@ const errors = []
 page.on('pageerror', error => errors.push(error.message))
 page.on('dialog', dialog => dialog.accept(dialog.type() === 'prompt' ? 'اصلاح داده آزمایشی' : undefined))
 const base = process.env.SPM_TEST_URL || 'http://127.0.0.1:5173'
-async function go(path) { await page.goto(base + path); await page.locator('main').waitFor() }
+async function go(path) { await page.goto(base + path); await page.locator('main').waitFor(); if(path==='/activities/today')await page.getByRole('button',{name:'فعالیت جدید',exact:true}).click();if(/^\/projects\/[^/]+$/.test(path)&&path!=='/projects/new')await page.getByRole('button',{name:/خدمات پروژه و قیمت‌ها/}).click() }
 async function eventually(check) {
  for(let i = 0; i < 40; i++) { if(await check()) return; await new Promise(resolve => setTimeout(resolve, 100)) }
  throw new Error('Timed out waiting for assertion')
@@ -69,7 +69,7 @@ try {
  await page.getByLabel(/مقدار انجام‌شده/).fill('۴')
  await page.getByRole('button', { name: 'ذخیره تغییرات', exact: true }).click()
  await eventually(async () => /باقی‌مانده: ۶/.test(await page.locator('main').innerText()))
- await page.reload()
+ await page.reload(); await page.getByRole('button',{name:'فعالیت جدید',exact:true}).click()
  await page.getByLabel('پروژه و مشتری', { exact: true }).selectOption(fixture.projects[2].id)
  await page.getByLabel('نمایش همه تاریخ‌ها').check()
  await eventually(async () => /باقی‌مانده: ۶/.test(await page.locator('main').innerText()))
@@ -92,9 +92,10 @@ try {
   await setDate('تاریخ سند', 1403, 12, 30)
   if (table === 'payments') await page.locator('input[name="amount"]').fill('100')
   else { await page.locator('input[name="description"]').fill('خدمت آزمایشی'); await page.locator('input[name="unitPrice"]').fill('100') }
-  await page.getByRole('button', { name: 'ذخیره', exact: true }).click()
+  await page.getByRole('button', { name: table==='payments'?'ذخیره':'ذخیره و پیش‌نمایش', exact: true }).click()
   await page.locator('form').waitFor({ state: 'hidden' })
   assert.equal(await page.evaluate(async (table) => (await (await import('/src/db/db.ts')).db.table(table).toArray())[0].date, table), '2025-03-20')
+  if(table!=='payments')await page.getByRole('button',{name:'بازگشت',exact:true}).click()
  }
  assert.equal(await page.locator('input[type="date"]').count(), 0)
  console.log('All three financial forms save the selected Persian date')
@@ -136,6 +137,7 @@ try {
  await page.getByRole('status').waitFor()
  const attached = await page.evaluate(async ({ projectId, serviceId }) => (await (await import('/src/db/db.ts')).db.projectItems.toArray()).filter(row => row.projectId === projectId && row.serviceId === serviceId), { projectId: fixture.projects[0].id, serviceId: catalogFixture.id })
  assert.equal(attached.length, 1); assert.equal(attached[0].quantity, 10); assert.equal(attached[0].unitPrice, 500)
+ await page.getByRole('button',{name:'فعالیت جدید',exact:true}).click()
  await serviceSelect.selectOption(attached[0].id)
  await page.getByLabel(/مقدار انجام‌شده/).fill('۱')
  await page.getByRole('button', { name: 'ثبت فعالیت', exact: true }).click()

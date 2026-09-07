@@ -27,7 +27,7 @@ export const backupRepository = {
       const current = await snapshot()
       const exportedAt = new Date().toISOString()
       // Ensure the safety copy can be restored before altering any business data.
-      parseBackup({ version:1, exportedAt, data:current })
+      parseBackup({ format:'lineyar-backup',version:3, exportedAt, data:current })
       await db.recoverySnapshots.put({ id:'latest', exportedAt, data:current })
       for (const table of backupTables) {
         await db.table(table).clear()
@@ -39,6 +39,7 @@ export const backupRepository = {
   async getRecovery(): Promise<BackupData | undefined> {
     const recovery = await db.recoverySnapshots.get('latest')
     if (!recovery) return undefined
-    return createBackup(recovery.data,recovery.exportedAt)
+    const normalized=parseBackup({version:1,exportedAt:recovery.exportedAt,data:recovery.data})
+    return createBackup(normalized.data,recovery.exportedAt)
   },
 }

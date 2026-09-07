@@ -14,7 +14,7 @@ const { transitions, needsTransitionReason, dashboardStatuses, executionDeadline
 const event = (from, to, effectiveDate) => ({ kind: 'status', from, to, effectiveDate })
 const project = { id: 'p', status: 'completed', executionStartDate: '2025-01-01', actualEndDate: '2025-01-20', statusHistory: [event(null, 'in_progress', '2025-01-01'), event('in_progress', 'paused', '2025-01-05'), event('paused', 'in_progress', '2025-01-10'), event('in_progress', 'completed', '2025-01-20')] }
 test('seven current statuses, guarded reopening, legacy review and consistent deadlines', () => {
- assert.deepEqual(dashboardStatuses, ['draft','planned','in_progress','paused','completed'])
+ assert.deepEqual(dashboardStatuses, ['draft','planned','in_progress','paused','completed','delivered'])
  assert.ok(!executionDeadlineStatuses.includes('cancelled'))
  assert.ok(!executionDeadlineStatuses.includes('delivered'))
  assert.ok(!transitions.draft.includes('delivered'))

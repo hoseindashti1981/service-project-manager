@@ -14,6 +14,7 @@ import { normalizeDigits, serviceUnits, validateServicePrice } from '@/domain/se
 import { formatMoney } from '@/lib/money'
 
 export function ProjectServices({ projectId }: { projectId: string }) {
+  const [open,setOpen]=useState(false)
   const [activities, setActivities] = useState<ProjectActivity[]>([])
   const [date, setDate] = useState(toISODate)
 
@@ -50,7 +51,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
       const input = { date, projectId, serviceId: serviceId || undefined, title, unit, quantity: amount, unitPrice, pricingType: 'PER_UNIT' as const }
       if (editing) await projectItemRepository.update(editing, input)
       else await projectItemRepository.create(input)
-      reset(); await load()
+      reset(); await load(); setOpen(false)
     } catch (err) { setError(err instanceof Error ? err.message : 'ذخیره ناموفق بود.') }
     finally { setBusy(false) }
   }
@@ -63,7 +64,8 @@ export function ProjectServices({ projectId }: { projectId: string }) {
   }
   const field = 'w-full rounded-lg border border-slate-300 p-2'
   return <section className="space-y-4 rounded-2xl border bg-white p-4">
-    <h3 className="font-bold">خدمات پروژه و قیمت‌ها</h3>
+    <button type="button" aria-expanded={open} className="min-h-11 font-bold w-full text-right" onClick={()=>setOpen(!open)}>خدمات پروژه و قیمت‌ها — {items.length.toLocaleString("fa-IR")} خدمت · {items.length ? Math.round(items.reduce((s,item)=>s+serviceProgress(item,activities).percent,0)/items.length) : 0}٪ میانگین پیشرفت</button>
+    {open && <>
     <p className="text-xs text-slate-500">قیمت هر ردیف مستقل از کاتالوگ ذخیره می‌شود. جمع خدمات، مبلغ توافق اولیه را تغییر نمی‌دهد.</p>
     <form onSubmit={(event) => void submit(event)} className="grid gap-3">
       <label>انتخاب از کاتالوگ<select value={serviceId} onChange={(event) => selectService(event.target.value)} className={field}><option value="">خدمت سفارشی</option>{serviceId && !services.some((service) => service.id === serviceId) && <option value={serviceId}>خدمت غیرفعال</option>}{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
@@ -76,5 +78,6 @@ export function ProjectServices({ projectId }: { projectId: string }) {
     {items.length === 0 && <p className="text-sm text-slate-500">هنوز خدمتی برای پروژه ثبت نشده است.</p>}
     {items.map((item) => <article key={item.id} className="space-y-2 border-t pt-3"><b>{item.title}</b><p className="text-xs text-slate-500">{formatDateFa(item.date || item.createdAt)}</p><p className="text-sm">انجام‌شده: {serviceProgress(item, activities).completed.toLocaleString('fa-IR')} · باقی‌مانده: {serviceProgress(item, activities).remaining.toLocaleString('fa-IR')}</p><progress aria-label={`پیشرفت ${item.title}`} max={100} value={serviceProgress(item, activities).percent} className="w-full" /><p className="text-sm">{item.quantity.toLocaleString('fa-IR')} {serviceUnits.find((entry) => entry.value === item.unit)?.label} × {formatMoney(item.unitPrice)} = {formatMoney(item.totalPrice)}</p><div className="flex gap-4 text-sm"><button disabled={busy} onClick={() => { setDate(item.date || toISODate(new Date(item.createdAt))); setEditing(item.id); setServiceId(item.serviceId ?? ''); setTitle(item.title); setUnit(item.unit); setQuantity(String(item.quantity)); setPrice(String(item.unitPrice)); setError('') }}>ویرایش خدمت</button><button disabled={busy} onClick={() => void remove(item)} className="text-rose-600">حذف خدمت</button></div></article>)}
     <p className="border-t pt-3 font-bold">جمع خدمات: {formatMoney(items.reduce((sum, item) => sum + item.totalPrice, 0))}</p>
+    </>}
   </section>
 }

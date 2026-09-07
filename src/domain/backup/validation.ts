@@ -39,6 +39,7 @@ function validateRow(table: BackupTable, row: Row, where: string) {
     case 'customers': field(row,'mobile',text,where); break
     case 'services': field(row,'defaultUnit',choice(units),where); field(row,'defaultUnitPrice',money,where,true); field(row,'isActive',value => typeof value === 'boolean',where); break
     case 'projects': {
+      field(row,'discount',money,where,true)
       field(row,'customerId',id,where); field(row,'status',choice(statuses),where); field(row,'contractAmount',money,where,true)
       for (const key of ['address','workType']) field(row,key,text,where,true)
       for (const key of ['latitude','longitude']) field(row,key,number,where,true)
@@ -77,10 +78,28 @@ function validateRow(table: BackupTable, row: Row, where: string) {
       if (!Array.isArray(row.lines)) fail(where,'lines')
       unique(row.lines,where)
       for (const line of row.lines as Row[]) { field(line,'description',text,where); field(line,'quantity',number,where); field(line,'unitPrice',money,where); field(line,'total',money,where); if (Math.round((line.quantity as number)*(line.unitPrice as number)) !== line.total) fail(where,'lines.total') }
-      if ((row.lines as Row[]).reduce((sum,line) => sum + (line.total as number),0) !== row.total) fail(where,'total')
+      for(const key of ['discount','tax','extraFee'])field(row,key,money,where,true)
+      field(row,'dueDate',date,where,true)
+      for(const key of ['terms','paymentInfo','projectSnapshot','projectAddress'])field(row,key,text,where,true)
+      if(row.business!==undefined){if(!object(row.business))fail(where,'business');for(const key of ['name','phone','address'])field(row.business as Row,key,text,where);field(row.business as Row,'logo',value=>typeof value==='string'&&value.length<=2000000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(value),where,true)}
+      if(row.customerSnapshot!==undefined){if(!object(row.customerSnapshot))fail(where,'customerSnapshot');for(const key of ['name','mobile'])field(row.customerSnapshot as Row,key,text,where);field(row.customerSnapshot as Row,'address',text,where,true)}
+      field(row,'qrData',value=>typeof value==='string'&&value.length<=2000000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(value),where,true)
+      const subtotal=(row.lines as Row[]).reduce((sum,line) => sum + (line.total as number),0)
+      if(Number(row.discount??0)>subtotal||subtotal-Number(row.discount??0)+Number(row.tax??0)+Number(row.extraFee??0)!==row.total)fail(where,'total')
       break
     }
     case 'payments': field(row,'customerId',id,where); field(row,'projectId',id,where,true); field(row,'invoiceId',id,where,true); field(row,'amount',money,where); field(row,'date',date,where); field(row,'method',choice(['cash','card','transfer','cheque','other']),where); break
+    case 'photos':
+      field(row,'projectId',id,where);field(row,'activityId',id,where,true);field(row,'title',text,where);field(row,'date',date,where);field(row,'bytes',money,where)
+      for(const key of ['dataUrl','thumbnail'])field(row,key,value=>typeof value==='string'&&value.length<=2000000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(value),where)
+      break
+    case 'appSettings':
+      field(row,'defaultActivityRange',choice(['all','today']),where,true)
+      if(row.id!=='business')fail(where,'id');field(row,'description',text,where,true)
+      for(const key of ['name','phone','address','paymentInfo'])field(row,key,text,where)
+      field(row,'color',value=>typeof value==='string'&&/^#[a-fA-F0-9]{6}$/.test(value),where)
+      for(const key of ['logo','banner','favicon'])field(row,key,value=>typeof value==='string'&&value.length<=2000000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(value),where,true)
+      break
   }
 }
 function relationshipWarnings(data: BackupRows): string[] {
@@ -92,20 +111,23 @@ function relationshipWarnings(data: BackupRows): string[] {
     const item = maps.projectItems.get(row.projectItemId)
     if (item && item.projectId !== row.projectId) throw new Error('ارتباط فعالیت و خدمت پروژه ناسازگار است.')
     const project = maps.projects.get(row.projectId)
+    if(table==='photos'&&row.activityId!==undefined){const activity=maps.projectActivities.get(row.activityId);if(activity&&activity.projectId!==row.projectId)throw Error('عکس و فعالیت به پروژه‌های متفاوت متصل‌اند.')}
+    if(table==='projects'&&Number(row.discount??0)>Number(row.contractAmount??0)+data.projectChanges.filter(c=>c.projectId===row.id).reduce((s,c)=>s+Number(c.amount),0))throw Error('تخفیف پروژه از مبلغ قرارداد و کار اضافه بیشتر است.')
     if (project && row.customerId && project.customerId !== row.customerId) warnings.add('بعضی اسناد مالی به مشتری متفاوت از مشتری پروژه متصل‌اند؛ پس از بازیابی بررسی شوند.')
   }
   return [...warnings]
 }
 export function parseBackup(value: unknown): BackupPreview {
-  if (!object(value) || (value.version !== 1 && value.version !== 2)) throw new Error('نسخه فایل پشتیبان پشتیبانی نمی‌شود؛ فایل معتبر همین برنامه را انتخاب کنید.')
+  if (!object(value) || (value.version !== 1 && value.version !== 2 && value.version !== 3)) throw new Error('نسخه فایل پشتیبان پشتیبانی نمی‌شود؛ فایل معتبر همین برنامه را انتخاب کنید.')
   if (!text(value.exportedAt) || !/^\d{4}-\d{2}-\d{2}T/.test(value.exportedAt as string) || !Number.isFinite(Date.parse(value.exportedAt as string))) throw new Error('زمان ایجاد بکاپ معتبر نیست.')
-  if (value.version === 2 && value.format !== 'lineyar-backup') throw new Error('نوع فایل پشتیبان معتبر نیست.')
+  if (value.version !== 1 && value.format !== 'lineyar-backup') throw new Error('نوع فایل پشتیبان معتبر نیست.')
   if (!object(value.data)) throw new Error('جدول‌های فایل پشتیبان معتبر نیستند.')
   if (Object.keys(value.data).some(key => !backupTables.includes(key as BackupTable))) throw new Error('فایل جدول ناشناخته دارد؛ برای جلوگیری از حذف اطلاعات، ابتدا برنامه را به نسخه سازگار ارتقا دهید.')
   const data = {} as BackupRows
   const warnings: string[] = []
   for (const table of backupTables) {
     const rows = value.data[table]
+    if(value.version!==3 && ['photos','appSettings'].includes(table) && rows===undefined){data[table]=[];warnings.push(`بکاپ قدیمی ${backupTableLabels[table]} ندارد؛ جایگزینی آن این بخش را خالی می‌کند. نسخه بازگشت محفوظ است.`);continue}
     if (table === 'reminders' && value.version === 1 && rows === undefined) { data[table] = []; warnings.push('این بکاپ قدیمی یادآورها را ندارد؛ با بازیابی آن، یادآورهای فعلی از مجموعه فعال حذف می‌شوند و در نسخه بازگشت خودکار باقی می‌مانند.'); continue }
     if (!Array.isArray(rows)) throw new Error(`جدول «${backupTableLabels[table]}» در فایل وجود ندارد یا معتبر نیست.`)
     unique(rows,backupTableLabels[table])
@@ -123,12 +145,12 @@ async function digest(value: unknown): Promise<string> {
   return Array.from(new Uint8Array(hash),byte => byte.toString(16).padStart(2,'0')).join('')
 }
 export async function createBackup(data: BackupRows, exportedAt = new Date().toISOString()): Promise<BackupData> {
-  const payload = { format:'lineyar-backup' as const, version:2 as const, exportedAt, data }
+  const payload = { format:'lineyar-backup' as const, version:3 as const, exportedAt, data }
   return { ...payload, checksum:{ algorithm:'SHA-256', value:await digest(payload) } }
 }
 export async function inspectBackup(value: unknown): Promise<BackupPreview> {
   const preview = parseBackup(value)
-  if (preview.version === 2) {
+  if (preview.version !== 1) {
     const backup = value as BackupData
     if (!object(backup.checksum) || backup.checksum.algorithm !== 'SHA-256' || typeof backup.checksum.value !== 'string' || !/^[a-f0-9]{64}$/.test(backup.checksum.value)) throw new Error('کد کنترل یکپارچگی بکاپ وجود ندارد یا معتبر نیست.')
     const expected = await digest({ format:backup.format, version:backup.version, exportedAt:backup.exportedAt, data:backup.data })

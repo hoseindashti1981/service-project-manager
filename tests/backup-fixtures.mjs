@@ -17,5 +17,6 @@ export function backupFixture() {
   invoices:[{...base('i1'),customerId:'c1',projectId:'p1',quotationId:'q1',number:'INV-1403-0001',date:'2025-01-02',status:'issued',lines:[{id:'il1',description:'چراغ',quantity:1,unitPrice:100,total:100}],total:100}],
   payments:[{...base('pay1'),customerId:'c1',projectId:'p1',invoiceId:'i1',amount:50,date:'2025-01-02',method:'cash'}],
   reminders:[{...base('r1'),projectId:'p1',title:'پیگیری پرداخت',dueDate:'2025-01-03',status:'open'}],
+  photos:[],appSettings:[],
  }
 }

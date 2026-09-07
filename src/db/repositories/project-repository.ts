@@ -8,6 +8,7 @@ import type { ID } from '@/types'
 function generateId(): string {
   return crypto.randomUUID()
 }
+function validateAmounts(input:Partial<Project>){for(const key of ['contractAmount','discount'] as const)if(input[key]!==undefined&&(!Number.isSafeInteger(input[key])||input[key]!<0))throw Error('مبلغ قرارداد و تخفیف باید صحیح و نامنفی باشند.');for(const [key,max] of [['latitude',90],['longitude',180]] as const)if(input[key]!==undefined&&(!Number.isFinite(input[key])||Math.abs(input[key]!)>max))throw Error('مختصات پروژه معتبر نیست.')}
 
 export const projectRepository = {
   /** دریافت همه پروژه‌ها */
@@ -53,6 +54,8 @@ export const projectRepository = {
 
   /** ایجاد پروژه جدید */
   async create(input: CreateProjectInput): Promise<Project> {
+    validateAmounts(input)
+    if((input.discount??0)>(input.contractAmount??0))throw Error('تخفیف بیش از مبلغ قرارداد است.')
     if (!newProjectStatuses.some((option) => option.value === input.status)) throw new Error('برای پروژه جدید وضعیت پیش‌نویس، برنامه‌ریزی‌شده یا در جریان انتخاب کنید.')
     validateProjectDates(input, true)
     const now = Date.now()
@@ -66,6 +69,7 @@ export const projectRepository = {
       longitude: input.longitude,
       workType: input.workType?.trim(),
       contractAmount: input.contractAmount ?? 0,
+      discount: input.discount??0,
       agreementDate: input.agreementDate,
       executionStartDate: input.executionStartDate,
       deliveryDate: input.deliveryDate,
@@ -85,13 +89,14 @@ export const projectRepository = {
 
   /** ویرایش پروژه */
   async update(id: ID, input: UpdateProjectInput): Promise<Project> {
-    return db.transaction('rw', db.projects, db.projectActivities, async () => {
+    return db.transaction('rw', [db.projects, db.projectActivities,db.projectChanges,db.payments,db.invoices,db.quotations], async () => {
     const existing = await db.projects.get(id)
     if (!existing) {
       throw new Error('پروژه یافت نشد')
     }
 
     if (input.status !== undefined && input.status !== existing.status) throw new Error('برای تغییر وضعیت از بخش گردش‌کار پروژه استفاده کنید.')
+    if(input.customerId && input.customerId!==existing.customerId){const linked=await Promise.all([db.payments,db.invoices,db.quotations].map(table=>table.where('projectId').equals(id).count()));if(linked.some(Boolean))throw Error('پروژه دارای سابقه مالی است؛ مشتری آن قابل تغییر نیست.')}
     const updated: Project = {
       ...existing,
       ...input,
@@ -104,6 +109,9 @@ export const projectRepository = {
       updatedAt: Date.now(),
     }
 
+    validateAmounts(updated)
+    const extras=(await db.projectChanges.where('projectId').equals(id).toArray()).reduce((s,c)=>s+c.amount,0)
+    if((updated.discount??0)>(updated.contractAmount??0)+extras)throw Error('تخفیف بیش از مبلغ قابل دریافت است.')
     validateProjectDates(updated, !!existing.statusHistory?.length)
     if (JSON.stringify(projectDates(existing)) !== JSON.stringify(projectDates(updated))) {
       const activities = await db.projectActivities.where('projectId').equals(id).toArray()

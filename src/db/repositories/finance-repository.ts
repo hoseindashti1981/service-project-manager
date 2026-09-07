@@ -1,75 +1,38 @@
 import { requireDate } from '@/lib/dates'
 import { db } from '@/db/db'
-import type { CreateInvoiceInput, CreatePaymentInput, CreateQuotationInput, FinanceLine, Invoice, Payment, Quotation } from '@/domain/finance/types'
-import type { ID, Money } from '@/types'
-
-const now = () => Date.now()
-const totalLines = (lines: FinanceLine[]) => lines.reduce((sum, line) => sum + line.total, 0)
-
-function jalaliYear() {
-  const year = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric' }).format(new Date())
-  return year.replace(/[^0-9۰-۹]/g, '').replace(/[۰-۹]/g, (char) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(char)))
-}
-
-async function nextNumber(type: 'Q' | 'INV') {
-  const table = type === 'Q' ? db.quotations : db.invoices
-  const prefix = `${type}-${jalaliYear()}-`
-  const existing = await table.filter((item) => item.number.startsWith(prefix)).count()
-  return `${prefix}${String(existing + 1).padStart(4, '0')}`
-}
-
-export const financeRepository = {
-  async createQuotation(input: CreateQuotationInput): Promise<Quotation> {
-    requireDate(input.date)
-    const timestamp = now()
-    const quotation: Quotation = { ...input, status: input.status as Quotation['status'], id: crypto.randomUUID(), number: await nextNumber('Q'), lines: input.lines.map((line) => ({ ...line, id: line.id || crypto.randomUUID(), total: Math.round(line.quantity * line.unitPrice) })), total: totalLines(input.lines.map((line) => ({ ...line, total: Math.round(line.quantity * line.unitPrice) }))), createdAt: timestamp, updatedAt: timestamp }
-    await db.quotations.add(quotation)
-    return quotation
-  },
-
-  async createInvoice(input: CreateInvoiceInput): Promise<Invoice> {
-    requireDate(input.date)
-    const timestamp = now()
-    const lines = input.lines.map((line) => ({ ...line, id: line.id || crypto.randomUUID(), total: Math.round(line.quantity * line.unitPrice) }))
-    const invoice: Invoice = { ...input, status: input.status as Invoice['status'], id: crypto.randomUUID(), number: await nextNumber('INV'), lines, total: totalLines(lines), createdAt: timestamp, updatedAt: timestamp }
-    await db.invoices.add(invoice)
-    return invoice
-  },
-
-  async voidInvoice(id: ID, reason?: string): Promise<Invoice> {
-    const invoice = await db.invoices.get(id)
-    if (!invoice) throw new Error('فاکتور یافت نشد')
-    const updated: Invoice = { ...invoice, status: 'void', voidReason: reason?.trim() || undefined, updatedAt: now() }
-    await db.invoices.put(updated)
-    return updated
-  },
-
-  async createPayment(input: CreatePaymentInput): Promise<Payment> {
-    requireDate(input.date)
-    const payment: Payment = { ...input, id: crypto.randomUUID(), amount: Math.round(input.amount), createdAt: now(), updatedAt: now() }
-    await db.payments.add(payment)
-    if (payment.invoiceId) {
-      const invoice = await db.invoices.get(payment.invoiceId)
-      if (invoice && invoice.status !== 'void') {
-        const payments = await db.payments.where('invoiceId').equals(invoice.id).toArray()
-        const received = payments.reduce((sum, item) => sum + item.amount, 0)
-        if (received >= invoice.total) await db.invoices.put({ ...invoice, status: 'paid', updatedAt: now() })
-      }
-    }
-    return payment
-  },
-
-  getQuotations: () => db.quotations.orderBy('createdAt').reverse().toArray(),
-  getInvoices: () => db.invoices.orderBy('createdAt').reverse().toArray(),
-  getPayments: () => db.payments.orderBy('date').reverse().toArray(),
-
-  async balanceForCustomer(customerId: ID): Promise<Money> {
-    const [invoices, payments] = await Promise.all([db.invoices.where('customerId').equals(customerId).toArray(), db.payments.where('customerId').equals(customerId).toArray()])
-    return invoices.filter((item) => item.status !== 'void').reduce((sum, item) => sum + item.total, 0) - payments.reduce((sum, item) => sum + item.amount, 0)
-  },
-
-  async balanceForProject(projectId: ID): Promise<Money> {
-    const [invoices, payments] = await Promise.all([db.invoices.where('projectId').equals(projectId).toArray(), db.payments.where('projectId').equals(projectId).toArray()])
-    return invoices.filter((item) => item.status !== 'void').reduce((sum, item) => sum + item.total, 0) - payments.reduce((sum, item) => sum + item.amount, 0)
-  },
+import { readAccount } from './account-repository'
+import type { CreateInvoiceInput,CreatePaymentInput,CreateQuotationInput,Invoice,Quotation,Payment } from '@/domain/finance/types'
+const money=(n:number)=>{if(!Number.isSafeInteger(n)||n<0)throw Error('مبلغ باید صحیح و نامنفی باشد.');return n}
+async function links(customerId:string,projectId?:string){if(!await db.customers.get(customerId))throw Error('مشتری یافت نشد.');if(projectId&&(await db.projects.get(projectId))?.customerId!==customerId)throw Error('پروژه متعلق به مشتری نیست.')}
+async function save(kind:'invoice'|'quotation',input:CreateInvoiceInput|CreateQuotationInput,id?:string){return db.transaction('rw',db.invoices,db.quotations,db.projects,db.customers,db.payments,async()=>{
+ requireDate(input.date);if(input.dueDate)requireDate(input.dueDate);await links(input.customerId,input.projectId)
+ const table=kind==='invoice'?db.invoices:db.quotations,old=id?await table.get(id):undefined
+ if(id&&!old)throw Error('سند یافت نشد.');if(old&&['void','paid'].includes(old.status))throw Error('سند تسویه یا باطل‌شده قابل ویرایش نیست.')
+ if(kind==='invoice'&&old&&await db.payments.where('invoiceId').equals(old.id).count())throw Error('فاکتور دارای پرداخت قابل ویرایش نیست؛ ابتدا مغایرت پرداخت را بررسی کنید.')
+ if(kind==='invoice'&&'quotationId' in input&&input.quotationId){const q=await db.quotations.get(input.quotationId);if(!q||q.customerId!==input.customerId||q.projectId!==input.projectId)throw Error('پیش‌فاکتور متعلق به همین مشتری و پروژه نیست.')}
+ if(!(kind==='invoice'?['draft','issued']:['draft','sent','accepted','rejected']).includes(input.status))throw Error('وضعیت نامعتبر است.')
+ if(!input.lines.length)throw Error('حداقل یک ردیف لازم است.')
+ const lines=input.lines.map(l=>{if(!l.description.trim()||!Number.isFinite(l.quantity)||l.quantity<=0)throw Error('شرح و مقدار ردیف معتبر نیست.');money(l.unitPrice);return {...l,id:l.id||crypto.randomUUID(),total:money(Math.round(l.quantity*l.unitPrice))}})
+ const discount=money(input.discount??0),tax=money(input.tax??0),extraFee=money(input.extraFee??0),subtotal=money(lines.reduce((s,l)=>s+l.total,0))
+ if(discount>subtotal)throw Error('تخفیف از جمع ردیف‌ها بیشتر است.')
+ const total=money(subtotal-discount+tax+extraFee),prefix=(kind==='invoice'?'INV':'Q')+'-'+new Intl.DateTimeFormat('en',{year:'numeric',calendar:'persian'}).format(new Date()).replace(/[^0-9]/g,'')+'-'
+ const all=await table.toArray(),number=old?.number??prefix+String(Math.max(0,...all.filter(x=>x.number.startsWith(prefix)).map(x=>Number(x.number.slice(prefix.length))||0))+1).padStart(4,'0')
+ const doc={...input,lines,total,discount,tax,extraFee,id:old?.id??crypto.randomUUID(),number,createdAt:old?.createdAt??Date.now(),updatedAt:Date.now()}
+ if(kind==='invoice')await db.invoices.put(doc as Invoice);else await db.quotations.put(doc as Quotation);return doc
+})}
+export const financeRepository={
+ createInvoice:(input:CreateInvoiceInput)=>save('invoice',input) as Promise<Invoice>,createQuotation:(input:CreateQuotationInput)=>save('quotation',input) as Promise<Quotation>,
+ updateInvoice:(id:string,input:CreateInvoiceInput)=>save('invoice',input,id) as Promise<Invoice>,updateQuotation:(id:string,input:CreateQuotationInput)=>save('quotation',input,id) as Promise<Quotation>,
+ async voidInvoice(id:string,reason?:string){const old=await db.invoices.get(id);if(!old)throw Error('فاکتور یافت نشد.');if(!reason?.trim())throw Error('دلیل ابطال لازم است.');const next={...old,status:'void' as const,voidReason:reason,updatedAt:Date.now()};await db.invoices.put(next);return next},
+ async createPayment(input:CreatePaymentInput):Promise<Payment>{return db.transaction('rw',db.payments,db.invoices,db.projects,db.customers,async()=>{
+  requireDate(input.date);money(input.amount);if(!input.amount)throw Error('پرداخت باید مثبت باشد.');if(!['cash','card','transfer','cheque','other'].includes(input.method))throw Error('روش پرداخت نامعتبر است.')
+  let projectId=input.projectId;const invoice=input.invoiceId?await db.invoices.get(input.invoiceId):undefined
+  if(input.invoiceId&&(!invoice||['void','draft'].includes(invoice.status)||invoice.customerId!==input.customerId))throw Error('فاکتور معتبر مشتری را انتخاب کنید.')
+  if(invoice){if(projectId&&projectId!==invoice.projectId)throw Error('پروژه پرداخت و فاکتور یکسان نیست.');projectId=invoice.projectId}
+  await links(input.customerId,projectId)
+  const payment={...input,projectId,id:crypto.randomUUID(),createdAt:Date.now(),updatedAt:Date.now()};await db.payments.add(payment)
+  if(invoice){const paid=(await db.payments.where('invoiceId').equals(invoice.id).toArray()).reduce((s,p)=>s+p.amount,0);if(paid>=invoice.total)await db.invoices.update(invoice.id,{status:'paid',updatedAt:Date.now()})}return payment
+ })},
+ getQuotations:()=>db.quotations.orderBy('createdAt').reverse().toArray(),getInvoices:()=>db.invoices.orderBy('createdAt').reverse().toArray(),getPayments:()=>db.payments.orderBy('date').reverse().toArray(),
+ balanceForProject:async(id:string)=>(await readAccount(id)).balance,balanceForCustomer:async(id:string)=>(await readAccount(undefined,id)).balance,
 }

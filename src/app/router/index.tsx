@@ -1,4 +1,6 @@
 import { projectStatusOptions } from '@/domain/project/status'
+import { SettingsPage } from '@/features/settings/settings-page'
+import { HelpPage } from '@/components/help'
 import { createRouter, createRootRoute, createRoute } from '@tanstack/react-router'
 import { RootLayout } from './root-layout'
 import { HomePage } from '../../features/home/home-page'
@@ -17,6 +19,8 @@ import { RemindersPage } from '../../features/reminders/pages/reminders-page'
 import { ServicesPage } from '../../features/services/pages/services-page'
 
 const rootRoute = createRootRoute({ component: RootLayout })
+const settingsRoute=createRoute({getParentRoute:()=>rootRoute,path:'/settings',component:SettingsPage})
+const helpRoute=createRoute({getParentRoute:()=>rootRoute,path:'/help',component:HelpPage})
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: HomePage })
 const dbTestRoute = createRoute({ getParentRoute: () => rootRoute, path: '/db-test', component: DbTestPage })
 const customersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/customers', component: CustomersPage })
@@ -33,6 +37,7 @@ const remindersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/re
 const servicesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/services', component: ServicesPage })
 
 const routeTree = rootRoute.addChildren([
+  settingsRoute,helpRoute,
   indexRoute, dbTestRoute, customersRoute, customersNewRoute, customerDetailRoute,
   projectsRoute, projectsNewRoute, projectDetailRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute, servicesRoute,
 ])

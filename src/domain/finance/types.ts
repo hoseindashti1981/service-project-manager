@@ -6,9 +6,12 @@ export interface FinanceLine {
   quantity: number
   unitPrice: Money
   total: Money
+  unit?: string
 }
 
-export interface Quotation {
+export interface DocumentOptions { discount?:number; tax?:number; extraFee?:number; dueDate?:string; terms?:string; business?:{name:string;phone:string;address:string;logo?:string;color?:string}; customerSnapshot?:{name:string;mobile:string;address?:string}; projectSnapshot?:string;projectAddress?:string; paymentInfo?:string; qrData?:string }
+
+export interface Quotation extends DocumentOptions {
   id: ID
   number: string
   customerId: ID
@@ -22,7 +25,7 @@ export interface Quotation {
   updatedAt: Timestamp
 }
 
-export interface Invoice {
+export interface Invoice extends DocumentOptions {
   id: ID
   number: string
   customerId: ID

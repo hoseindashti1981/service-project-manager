@@ -1,3 +1,5 @@
+import { ProjectPhotos } from '../components/project-photos'
+import { ProjectLocation } from '../components/project-location'
 import { ProjectWorkflow } from '../components/project-workflow'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, requireDate } from '@/lib/dates'
@@ -167,11 +169,13 @@ export function ProjectDetailPage() {
       )}
 
       {project && <ProjectWorkflow project={project} onChange={(updated) => { setProject(updated); setAgreementDate(updated.agreementDate || ''); setExecutionStartDate(updated.executionStartDate || ''); setActualEndDate(updated.actualEndDate || ''); setDeliveryDate(updated.deliveryDate || '') }} />}
+      {project && <ProjectTimeline projectId={project.id} createdAt={project.createdAt} startDate={project.startDate} />}
       {project && <ProjectServices projectId={project.id} />}
 
-      {project && <FinancialPanel projectId={project.id} contractAmount={project.contractAmount || 0} />}
+      {project && <FinancialPanel projectId={project.id} />}
 
-      {project && <ProjectTimeline projectId={project.id} createdAt={project.createdAt} startDate={project.startDate} />}
+      {project && <ProjectPhotos projectId={project.id}/>}
+      {project && <ProjectLocation project={project} onChange={setProject}/>}
 
       <form onSubmit={handleSave} className="space-y-4 bg-white border border-slate-200 rounded-xl p-5">
         {/* مشتری */}

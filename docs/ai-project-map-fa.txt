@@ -1,0 +1,647 @@
+نقشه فنی و روابط اپلیکیشن لاین‌یار برای AI
+Service Project Manager — AI Project Map
+
+آخرین به‌روزرسانی سند: ۱۴۰۵/۰۶/۱۶ (2026-09-07)
+وضعیت سند: مرجع زنده؛ باید همراه تغییرات کد به‌روزرسانی شود.
+
+هدف سند
+این فایل خلاصه‌ای قابل اتکا از معماری، روابط داده، قواعد دامنه، مسیرهای رابط، قابلیت‌های موجود و کارهای باقی‌مانده است. AI بعدی باید قبل از بررسی گسترده مخزن، این فایل را بخواند و سپس فقط فایل‌های مرتبط با درخواست جاری را باز کند.
+
+این فایل جای بررسی کد مرتبط را به‌طور کامل نمی‌گیرد. اگر کد و این سند با هم ناسازگار بودند، کد فعلی منبع نهایی حقیقت است و این سند باید در همان تغییر اصلاح شود.
+
+قواعد نگهداری این سند
+۱. قابلیت پیاده‌سازی‌شده و پیشنهاد آینده را هرگز مخلوط نکن.
+۲. بعد از تغییر جدول، رابطه، route، قاعده مالی، گردش کار، بکاپ یا امنیت، بخش متناظر را به‌روزرسانی کن.
+۳. کار تکمیل‌شده را از «باقی‌مانده» حذف و در «وضعیت فعلی» ثبت کن.
+۴. تاریخ بالای سند را تغییر بده.
+۵. اگر تصمیم محصول عوض شد، تصمیم قدیمی را پاک یا با برچسب «منسوخ» مشخص کن.
+۶. برای جزئیات اجرایی، فایل‌های مرجع معرفی‌شده در هر بخش را بخوان.
+
+════════════════════════════════════════
+بخش A — وضعیت واقعی و فعلی برنامه
+════════════════════════════════════════
+
+۱. معرفی محصول
+
+لاین‌یار یک برنامه مدیریت خدمات و پروژه‌های فنی، فارسی و راست‌به‌چپ است. برنامه در وضعیت فعلی local-first است و اطلاعات اصلی را در IndexedDB همان مرورگر نگه می‌دارد.
+
+فناوری‌ها:
+• React 19 + TypeScript
+• Vite
+• TanStack Router
+• Dexie / IndexedDB
+• Tailwind CSS
+• PWA با Service Worker
+
+مخزن محلی:
+F:\service-project-manager
+
+آدرس نسخه منتشرشده:
+https://hoseindashti1981.github.io/service-project-manager/
+
+مسیر پایه انتشار:
+/service-project-manager/
+
+فرمان‌های اصلی:
+• توسعه: npm run dev
+• بیلد انتشار: VITE_BASE_PATH=/service-project-manager/ npm run build
+• تست واحد: npm test
+• تست مرورگر: npm run test:browser
+• lint: npm run lint
+
+در PowerShell متغیر VITE_BASE_PATH با این شکل تنظیم می‌شود:
+$env:VITE_BASE_PATH='/service-project-manager/'
+
+۲. ساختار لایه‌ها
+
+src/domain
+مدل‌ها و قواعد دامنه؛ شامل مشتری، پروژه، وضعیت، فعالیت، خدمت، مالی، بکاپ و امنیت.
+
+src/db
+تعریف Dexie و نسخه‌های دیتابیس.
+
+src/db/repositories
+مرز خواندن و نوشتن داده‌ها. کامپوننت‌ها باید تا حد امکان از repository استفاده کنند و منطق دامنه را دور نزنند.
+
+src/features
+صفحه‌ها و کامپوننت‌های هر قابلیت.
+
+src/app/router
+تعریف routeها و layout اصلی.
+
+src/components
+کامپوننت‌های مشترک، تقویم شمسی، قفل برنامه و عناصر عمومی.
+
+tests
+تست‌های واحد و سناریوهای مرورگر.
+
+docs
+سیاست‌ها، نقشه راه، راهنمای کاربر و همین سند.
+
+۳. مسیرهای برنامه
+
+/                          داشبورد
+/projects                  فهرست پروژه‌ها؛ فیلتر status در query string
+/projects/new              پروژه جدید
+/projects/$projectId       جزئیات و ویرایش پروژه
+/customers                 دفترچه مشتریان
+/customers/new             مشتری جدید
+/customers/$customerId     جزئیات و ویرایش مشتری
+/activities/today          فعالیت‌های روزانه
+/finance                   امور مالی
+/reports                   گزارش‌ها و لینک تنظیمات
+/settings                  امنیت، ظاهر، اطلاعات کسب‌وکار و بکاپ
+/help                      راهنمای مرکزی
+/calendar                  تقویم کارها
+/reminders                 یادآوری‌ها
+/services                  کاتالوگ خدمات
+/db-test                   صفحه توسعه و آزمایش دیتابیس؛ مسیر محصول عادی نیست
+
+فایل مرجع routeها:
+src/app/router/index.tsx
+
+۴. دیتابیس و جدول‌ها
+
+نام دیتابیس:
+ServiceProjectManagerDB
+
+نسخه فعلی schema:
+7
+
+جدول‌های کسب‌وکار که در بکاپ قرار می‌گیرند:
+۱. customers
+۲. projects
+۳. services
+۴. projectItems
+۵. projectActivities
+۶. projectChanges
+۷. materials
+۸. expenses
+۹. quotations
+۱۰. invoices
+۱۱. payments
+۱۲. reminders
+۱۳. photos
+۱۴. appSettings
+
+جدول داخلی که در بکاپ عادی قرار نمی‌گیرد:
+• recoverySnapshots
+
+فایل مرجع:
+src/db/db.ts
+
+۵. نقشه روابط داده
+
+Customer (customers)
+│
+├── Project.customerId (projects)
+├── Quotation.customerId (quotations)
+├── Invoice.customerId (invoices)
+└── Payment.customerId (payments)
+
+Project (projects)
+│
+├── ProjectItem.projectId (projectItems)
+│   └── ProjectActivity.projectItemId (projectActivities، اختیاری)
+├── ProjectActivity.projectId (projectActivities)
+├── ProjectChange.projectId (projectChanges)
+├── Material.projectId (materials)
+├── Expense.projectId (expenses)
+├── Quotation.projectId (quotations، اختیاری)
+├── Invoice.projectId (invoices، اختیاری)
+├── Payment.projectId (payments، اختیاری)
+├── Reminder.projectId (reminders، اختیاری)
+└── Photo.projectId (photos؛ activityId اختیاری، رابط فعلی فقط پروژه)
+
+Service (services)
+└── ProjectItem.serviceId (projectItems، اختیاری)
+
+Quotation (quotations)
+└── Invoice.quotationId (invoices، اختیاری)
+
+Invoice (invoices)
+└── Payment.invoiceId (payments، اختیاری)
+
+Project همچنین دو سابقه توکار دارد و جدول جدا ندارند:
+• statusHistory: تاریخچه تغییر وضعیت و تاریخ‌های پروژه
+• activityAudit: ثبت ایجاد، ویرایش و حذف فعالیت با تصویر قبل و بعد
+
+روابط IndexedDB کلید خارجی اجباری در سطح دیتابیس ندارند. اعتبارسنجی باید در repository یا domain انجام شود. بکاپ قدیمی ممکن است orphan داشته باشد؛ سیستم بکاپ آنها را با هشدار حفظ می‌کند و بی‌صدا حذف نمی‌کند.
+
+۶. موجودیت مشتری
+
+فیلدهای مهم:
+• id
+• name
+• mobile
+• description اختیاری
+• date اختیاری؛ تاریخ واقعی ثبت مشتری
+• createdAt و updatedAt
+
+دفترچه مشتریان با نام و شماره جست‌وجو می‌شود. ارقام فارسی و انگلیسی normalize می‌شوند. شماره با لینک tel: روی گوشی قابل شماره‌گیری است.
+
+فایل‌های مرجع:
+src/domain/customer/types.ts
+src/domain/customer/contact.ts
+src/db/repositories/customer-repository.ts
+src/features/customers
+
+۷. موجودیت پروژه
+
+فیلدهای مهم:
+• id
+• customerId
+• title
+• address اختیاری
+• workType اختیاری
+• contractAmount اختیاری؛ مبلغ توافق اولیه
+• startDate؛ تاریخ پروژه
+• plannedEndDate؛ موعد برنامه‌ریزی‌شده
+• agreementDate؛ تاریخ توافق
+• executionStartDate؛ شروع واقعی اجرا
+• actualEndDate؛ پایان واقعی اجرا
+• deliveryDate؛ تاریخ تحویل
+• status
+• description
+• statusHistory
+• activityAudit
+
+مبلغ قرارداد با جمع خدمات پروژه یکی نیست. ProjectItemها جزئیات برآورد و پیشرفت‌اند و نباید contractAmount را خودکار تغییر دهند.
+
+فایل‌های مرجع:
+src/domain/project/types.ts
+src/db/repositories/project-repository.ts
+src/features/projects
+
+۸. وضعیت و گردش کار پروژه
+
+وضعیت‌های قابل استفاده:
+• draft = پیش‌نویس
+• planned = برنامه‌ریزی‌شده
+• in_progress = در جریان
+• paused = متوقف
+• completed = تکمیل‌شده / آماده تحویل
+• delivered = تحویل‌شده
+• cancelled = لغوشده
+
+وضعیت legacy:
+• active = فعال قدیمی؛ برای پروژه جدید مجاز نیست و باید توسط کاربر تعیین تکلیف شود.
+
+انتقال‌های مجاز:
+• draft → planned | in_progress | cancelled
+• planned → draft | in_progress | cancelled
+• in_progress → paused | completed | cancelled
+• paused → in_progress | cancelled
+• completed → delivered | in_progress | cancelled
+• delivered → in_progress
+• cancelled → draft | planned | in_progress
+• active → draft | planned | in_progress
+
+موارد نیازمند دلیل:
+• توقف
+• لغو
+• ادامه پس از توقف
+• بازگشایی پس از لغو
+• بازگشایی پروژه تکمیل یا تحویل‌شده
+
+تاریخ‌های واقعی توافق، شروع اجرا، پایان اجرا و تحویل نمی‌توانند در آینده باشند. ترتیب آنها باید معتبر باشد. تغییر وضعیت، تاریخ مؤثر و زمان ثبت را جدا نگه می‌دارد.
+
+شروع اولین فعالیت پروژه draft/planned فقط با تأیید صریح کاربر انجام می‌شود. تغییر وضعیت به in_progress و ذخیره فعالیت در یک تراکنش‌اند.
+
+منابع:
+src/domain/project/status.ts
+src/domain/project/workflow.ts
+src/db/repositories/project-workflow.ts
+docs/workflow-policy.md
+
+۹. خدمات و خدمات پروژه
+
+Service کاتالوگ عمومی خدمت است:
+• name
+• defaultUnit
+• defaultUnitPrice
+• description
+• isActive
+• date
+
+ProjectItem نمونه یک خدمت داخل یک پروژه است:
+• projectId
+• serviceId اختیاری
+• title
+• unit
+• quantity
+• unitPrice
+• totalPrice = quantity × unitPrice
+• pricingType
+• date
+
+قیمت ProjectItem از Service مستقل ذخیره می‌شود. تغییر قیمت کاتالوگ نباید قیمت پروژه‌های قبلی را عوض کند.
+
+واحدهای فعلی:
+meter, piece, point, hour, day, device, project, fixed, service
+
+۱۰. فعالیت روزانه و پیشرفت
+
+ProjectActivity:
+• projectId اجباری
+• projectItemId اختیاری
+• date اجباری
+• title اجباری
+• quantity اختیاری
+• unit اختیاری
+• amount اختیاری و صرفاً اطلاعات گزارش
+• note اختیاری
+
+اصل محصول:
+فعالیت روزانه گزارش کار است و الزاماً محاسبه مالی ندارد. مقدار و مبلغ می‌توانند خالی باشند. amount فعالیت نباید contractAmount، دریافتی، فاکتور یا مانده را تغییر دهد.
+
+اگر فعالیت به ProjectItem متصل باشد:
+• خدمت باید متعلق به همان پروژه باشد.
+• unit باید با واحد ProjectItem یکسان باشد.
+• quantity اگر وارد شد باید عدد مثبت باشد.
+• مجموع quantity فعالیت‌های معتبر، پیشرفت خدمت را می‌سازد.
+
+فعالیت عمومی projectItemId ندارد و پیشرفت خدمت را تغییر نمی‌دهد.
+
+ثبت دیرهنگام فقط برای روزی در دوره اجرای معتبر، در گذشته و با دلیل ممکن است. ثبت فعالیت جدید در پروژه متوقف/تکمیل/تحویل/لغو عادی نیست؛ ابتدا پروژه باید ادامه یا بازگشایی شود.
+
+ویرایش و حذف فعالیت دلیل می‌خواهند. before/after در project.activityAudit ثبت می‌شود. projectId فعالیت قبلی با ویرایش قابل تغییر نیست.
+
+منابع:
+src/domain/activity/types.ts
+src/domain/activity/progress.ts
+src/db/repositories/activity-repository.ts
+src/db/repositories/catalog-activity.ts
+src/features/activities/pages/today-activities-page.tsx
+
+۱۱. کار اضافه، مصالح و هزینه
+
+ProjectChange:
+• کار خارج از قرارداد اولیه
+• amount آن باید در مبلغ قابل دریافت پروژه لحاظ شود.
+
+Material:
+• projectId، title، quantity، unit، source، cost، date
+• source برابر customer یا contractor است.
+• هزینه مصالح پیمانکار در هزینه پروژه معنی دارد؛ مصالح مشتری نباید هزینه پیمانکار شمرده شود.
+
+Expense:
+• هزینه پروژه با title، amount، date و note
+
+اصل مهم:
+فعالیت روزانه جای کار اضافه نیست. افزایش طلب پروژه باید در contractAmount یا ProjectChange منعکس شود؛ فاکتور پروژه فقط سند همان طلب است.
+
+۱۲. پیش‌فاکتور، فاکتور و پرداخت
+
+Quotation:
+• customerId اجباری
+• projectId اختیاری
+• lines
+• total
+• status: draft | sent | accepted | rejected
+
+Invoice:
+• customerId اجباری
+• projectId اختیاری
+• quotationId اختیاری
+• lines
+• total
+• status: draft | issued | paid | void
+• voidReason برای ابطال
+
+Payment:
+• customerId اجباری
+• projectId اختیاری
+• invoiceId اختیاری
+• amount
+• date
+• method: cash | card | transfer | cheque | other
+
+جمع هر line برابر quantity × unitPrice است. مبالغ تومان و عدد صحیح امن و نامنفی‌اند.
+
+سیاست نهایی مالی — مدل A:
+طلب پروژه = contractAmount + مجموع projectChanges.amount − project.discount.
+مانده = طلب − مجموع payments.amount مرتبط. مثبت بدهکار، صفر تسویه، منفی بستانکار.
+فاکتورِ دارای projectId در هیچ وضعیت، طلب دوباره ایجاد نمی‌کند. قرارداد و کار اضافه و تخفیف، حتی پیش از صدور فاکتور منبع حساب پروژه‌اند. هیچ وضعیت پروژه‌ای به‌تنهایی بدهی را حذف نمی‌کند.
+سند مستقل بدون projectId، فقط در وضعیت issued یا paid طلب جدا به حساب مشتری اضافه می‌کند؛ draft/void و تمام quotations طلب نیستند. این استثنا صریح برای اسناد مستقل است، نه تغییر منبع طلب پروژه.
+ProjectItem قیمت‌دار، مبلغ یادداشتی فعالیت، هزینه و مصالح، طلب خودکار ایجاد نمی‌کنند.
+منبع محاسبه: src/domain/finance/account.ts. بارگذاری مشترک: src/db/repositories/account-repository.ts. readAccount در پروژه/مشتری/مالی/داشبورد/گزارش‌ها استفاده می‌شود.
+پرداخت قدیمیِ فاقد projectId از invoiceId معتبر همان مشتری به پروژه نسبت داده می‌شود؛ فقط یک‌بار کسر می‌شود. ریز دریافتی و حساب پروژه این نسبت‌دهی را نشان می‌دهند.
+مبالغ نمایش‌داده‌شده با برچسب دریافت، بدهکار یا بستانکار هستند؛ عدد منفی بی‌عنوان حذف شده است.
+سند پروژه از قرارداد و کار اضافه پیشنهاد می‌شود و کاربر ردیف‌ها را بازبینی و صدور را تأیید می‌کند. تغییر discount/tax/extraFee سند فقط جمع سند را تغییر می‌دهد؛ برای تغییر طلب واقعی باید قرارداد، کار اضافه یا تخفیف پروژه اصلاح شود. پیش‌نمایش این تفاوت را صریح می‌گوید.
+شماره سند در تراکنش با بیشینه شماره سال ساخته می‌شود. سند باطل یا تسویه‌شده و فاکتور دارای پرداخت قابل ویرایش نیست. پرداخت به سند draft/void یا مشتری/پروژه نامرتبط رد می‌شود. ایجاد پرداخت و به‌روزرسانی وضعیت paid تراکنشی است. ابطال، پرداخت را حذف نمی‌کند.
+snapshot اطلاعات کسب‌وکار و مشتری در سند جدید ذخیره می‌شود؛ سند قدیمی بدون snapshot با اطلاعات فعلی پیش‌نمایش می‌شود.
+فاکتور و پیش‌فاکتور: preview، A4 print، PDF با html2canvas و jsPDF موجود، Web Share فایل در صورت پشتیبانی و fallback دانلود. فایل قبل از کلیک آماده می‌شود تا user activation حفظ شود. QR اختیاری از تصویر بارگذاری‌شده است، تولید خودکار QR نیست.
+
+منابع:
+src/domain/finance/types.ts
+src/db/repositories/finance-repository.ts
+src/features/finance
+src/features/projects/components/financial-panel.tsx
+src/features/home/home-page.tsx
+
+۱۳. یادآوری و تقویم
+
+Reminder:
+• title
+• dueDate
+• projectId اختیاری
+• note اختیاری
+• status: open | done
+
+یادآوری محلی است و اعلان سیستمی یا سرور ندارد. یادآوری done از موارد باز کنار می‌رود ولی رکورد حذف نمی‌شود.
+
+تقویم روز دارای رویداد را قابل لمس می‌کند. تک‌رویداد مستقیم و چندرویداد در فهرست انتخابی باز می‌شوند؛ لینک فعالیت/یادآوری با hash رکورد و لینک پروژه وجود دارد. نام مشتری و پروژه کنار هم است.
+
+۱۴. تاریخچه پروژه
+
+تاریخچه پروژه از چند منبع ساخته می‌شود:
+• project.statusHistory
+• project.activityAudit
+• projectActivities قدیمی که audit ندارند
+• projectChanges
+• materials
+• expenses
+• payments مرتبط با پروژه
+• تاریخ ایجاد پروژه
+
+ProjectTimeline این موارد را مرتب و نمایش می‌دهد. تاریخ مؤثر رخداد با زمان ثبت رکورد متفاوت است.
+
+فایل مرجع:
+src/features/projects/components/project-timeline.tsx
+
+۱۵. داشبورد
+
+داشبورد موبایل فشرده و responsive است. در عرض‌های 360، 375، 390، 414 و 430 پیکسل تست شده و اسکرول افقی ندارد. تبلت و دسکتاپ باید ظاهر قبلی را حفظ کنند.
+
+وضعیت‌های فعلی کارت داشبورد:
+draft, planned, in_progress, paused, completed, delivered
+
+شش کارت مستقل و قابل لمس، با حفظ چیدمان فشرده موبایل وجود دارد.
+
+در موبایل هدر 56px است و همبرگر تکراری در داشبورد مخفی می‌شود؛ منوی «بیشتر» پایین صفحه مسیرهای فرعی را باز می‌کند.
+
+فایل مرجع:
+src/features/home/home-page.tsx
+src/app/router/root-layout.tsx
+
+۱۶. بکاپ و بازیابی
+
+فرمت فعلی بکاپ:
+• format: lineyar-backup
+• version: 3
+• exportedAt
+• data شامل 14 جدول کسب‌وکار، عکس‌ها و تنظیمات
+• checksum با SHA-256
+
+بکاپ شامل reminders و تاریخچه‌های توکار پروژه است. recoverySnapshots وارد بکاپ نمی‌شود تا بکاپ بازگشتی و تودرتو ایجاد نشود.
+
+بازیابی:
+• فایل را کامل اعتبارسنجی می‌کند.
+• checksum تغییر محتوا را تشخیص می‌دهد.
+• پیش‌نمایش تعداد رکوردهای فعلی و ورودی دارد.
+• merge انجام نمی‌دهد؛ جایگزینی کامل است.
+• قبل از جایگزینی یک recovery snapshot از داده فعلی می‌سازد.
+• snapshot و جایگزینی در یک تراکنش‌اند؛ خطا کل عملیات را rollback می‌کند.
+• بکاپ version 1 و 2 پشتیبانی می‌شود. checksum نسخه 2 قبل از افزودن جدول‌های خالی بررسی می‌شود. نبود عکس/تنظیمات و یادآورهای قدیمی هشدار دارد؛ جایگزینی کامل این بخش‌ها را خالی می‌کند.
+• حد فایل ورودی 200MiB است. عکس‌ها به شکل data URL فشرده در همان JSON هستند؛ تمام بازیابی از جمله عکس و تنظیمات تراکنشی است.
+
+فایل بکاپ رمزگذاری نشده است.
+
+منابع:
+src/domain/backup
+src/db/repositories/backup-repository.ts
+src/features/reports/components/backup-panel.tsx
+docs/backup-policy.md
+
+۱۷. قفل اختیاری برنامه
+
+قفل پیش‌فرض غیرفعال و محلی است.
+
+قابلیت‌ها:
+• رمز 10 تا 128 نویسه
+• PBKDF2-SHA256 با 600,000 تکرار و salt تصادفی
+• کد بازیابی تصادفی 128 بیتی
+• تأیید کد پیش از فعال‌سازی
+• تغییر رمز و چرخش کد بازیابی
+• زمان قفل خودکار 1، 5 یا 15 دقیقه
+• قفل هنگام رفتن صفحه به پس‌زمینه
+• قفل دستی و هماهنگی میان تب‌های هم‌مبدأ
+• محدودیت 30 ثانیه پس از پنج تلاش ناموفق
+
+قفل فقط رابط را می‌بندد و رمزگذاری دیتابیس نیست. تنظیمات آن در localStorage و جدا از بکاپ کسب‌وکار است. بازیابی بکاپ وضعیت قفل را تغییر نمی‌دهد.
+
+منابع:
+src/domain/security/lock.ts
+src/components/app-lock.tsx
+docs/lock-policy.md
+
+۱۸. تاریخ و پول
+
+تاریخ ذخیره‌شده در مدل‌ها به شکل ISO date یعنی YYYY-MM-DD است. رابط تاریخ باید تقویم شمسی باشد. Timestampهای createdAt و updatedAt عدد میلی‌ثانیه Unix هستند.
+
+برای تاریخ‌های واقعی از requireDate و قواعد domain استفاده شود. نمایش فارسی با helpers موجود انجام شود.
+
+Money بر حسب تومان است و باید عدد صحیح امن و نامنفی باشد؛ فقط ProjectChange در صورت تصمیم دامنه ممکن است علامت‌دار باشد، اما وضعیت فعلی ورودی کار اضافه نامنفی است.
+
+ارقام فارسی و عربی پیش از تبدیل عدد باید normalize شوند.
+
+منابع:
+src/lib/dates.ts
+src/lib/money.ts
+src/domain/service/helpers.ts
+src/types.ts
+
+۱۹. تست‌ها و الزامات عدم پسرفت
+
+npm test تست‌های تاریخ، گردش کار، اعداد، حساب یکپارچه و بکاپ نسخه‌های 1/2/3 را اجرا می‌کند.
+
+npm run test:browser این مجموعه‌ها را اجرا می‌کند:
+• tests/workflows.browser.mjs
+• tests/project-workflow.browser.mjs
+• tests/backup.browser.mjs
+• tests/contacts-diary.browser.mjs
+• tests/lock.browser.mjs
+• tests/dashboard-mobile.browser.mjs
+• tests/manual-fixes.browser.mjs
+آزمون آفلاینِ بیلد نهایی: tests/offline.browser.mjs با سرور preview.
+
+الزامات مهم تست:
+• داده مرورگر کاربر استفاده نشود؛ context ایزوله باشد.
+• تغییرات تاریخ، مالی، گردش کار و بکاپ با تست متناسب پوشش داده شوند.
+• موبایل حداقل در عرض‌های 360 تا 430 بدون overflow بررسی شود.
+• تغییر فقط موبایل نباید تصویر تبلت/دسکتاپ را عوض کند.
+• build انتشار با base path واقعی اجرا شود.
+
+lint فعلی تعدادی warning قدیمی set-state-in-effect و exhaustive-deps دارد، اما error ندارد. AI نباید warning قدیمی را به‌عنوان خطای تغییر جدید گزارش کند؛ warning تازه نیز نباید اضافه کند.
+
+════════════════════════════════════════
+بخش B — قابلیت‌های تکمیل‌شده و ادامه نقشه راه
+════════════════════════════════════════
+
+اصلاحات ۲۰ تا ۲۹ و ۳۱/۳۲ پیاده‌سازی شده‌اند:
+• کارت حساب پروژه، جمع مشتری و داشبورد از منبع مالی واحد؛ ریز کار اضافه و پرداخت، تخفیف پروژه و سند.
+• preview و چاپ/اشتراک فاکتور و پیش‌فاکتور با اطلاعات کسب‌وکار، ردیف‌ها، سررسید، شرایط و امضا.
+• گردش کار سپس تاریخچه در بالای پروژه؛ خدمات پیش‌فرض بسته با خلاصه تعداد و پیشرفت، بسته‌شدن پس از ذخیره.
+• فعالیت روزانه ابتدا تاریخچه؛ فرم با «فعالیت جدید» باز و پس از ذخیره/انصراف بسته می‌شود. مقدار/مبلغ و خدمت قیمت‌دار opt-in هستند.
+• روزهای تقویم تعاملی؛ پروژه و مشتری در یادآوری‌ها؛ کارت تحویل‌شده داشبورد.
+• اندازه مؤثر فیلد موبایل حداقل 16px؛ pinch zoom محدود نشده است. رفتار نهایی blur/navigation در iOS واقعی نیازمند آزمون دستگاه است.
+• /settings: امنیت و قفل، بکاپ، ظاهر و اطلاعات کسب‌وکار، بازه پیش‌فرض فعالیت‌ها، نسخه و تخمین فضا.
+• /help: راهنمای مرکزی؛ PageHelp در هدر هر صفحه modal همان قسمت را بدون ترک فرم باز می‌کند. متن کامل از docs/user-guide-fa.txt خوانده می‌شود.
+• موقعیت پروژه: lat/lng با اعتبارسنجی بازه، موقعیت فعلی با اجازه سیستم، لینک geo و لینک ارائه‌دهندگان. مرورگر نمی‌تواند فهرست تمام اپ‌های نصب‌شده را تضمین کند.
+• Workbox فونت‌های woff2 را precache می‌کند؛ آفلاین پس از بارگیری و کنترل Service Worker قابل استفاده است.
+
+عکس محلی (مرحله ۳۰) پیاده‌سازی شده:
+src/domain/media.ts: Photo، AppSettings، compressImage.
+photos: projectId اجباری، activityId اختیاری، تاریخ ISO، شرح، dataUrl، thumbnail، bytes و timestampها.
+ورودی JPG/PNG/WebP حداکثر 20MiB؛ حداکثر 60 میلیون پیکسل. تبدیل به JPEG، ضلع بزرگ حداکثر1600، کیفیت0.78؛ در صورت نیاز1200 و0.65. thumbnail حداکثر240، کیفیت0.6. خروجی data URL بیش از2میلیون نویسه رد می‌شود.
+bytes تخمین حجم فایل تصویر کامل است؛ سربار data URL، thumbnail و نسخه بازگشت فضای بیشتری می‌گیرند. Settings تخمین کل storage را از مرورگر می‌گیرد.
+ذخیره تصویر و بررسی پروژه در یک تراکنش است. quota failure پیام دارد؛ حذف عکس تأیید کاربر می‌خواهد. عکس و تنظیمات در backup3 و recoverySnapshot تراکنشی‌اند. نسخه6 دیتابیس بدون بازنویسی داده به7 ارتقا می‌یابد.
+AppSettings رکورد singleton با id=business دارد؛ نام، تلفن، آدرس، لوگو، بنر، فاوآیکن، رنگ، اطلاعات پرداخت، defaultActivityRange. اطلاعات قفل مستقل و خارج از بکاپ است. فاوآیکن نصب‌شده PWA ممکن است نصب مجدد بخواهد.
+
+فایل‌های جدید رابط:
+src/components/account-card.tsx، customer-projects.tsx، project-account-details.tsx، help.tsx
+src/features/finance/document-editor.tsx، document-preview.tsx
+src/features/calendar/day-events.tsx
+src/features/projects/components/project-photos.tsx، project-location.tsx
+src/features/settings/settings-page.tsx
+src/domain/security/lock-context.ts و src/domain/use-business.ts
+
+کارهای واقعی باقی‌مانده:
+۱. آزمون پذیرش کاربر روی گوشی واقعی، به‌خصوص iOS Safari/PWA، share sheet و چاپ.
+۲. چند هفته استفاده از عکس‌های واقعی برای سنجش کیفیت، حجم و سرعت؛ این مرحله با تست مصنوعی تمام نمی‌شود.
+۳. ادامه فازهای محصول بر اساس بازخورد.
+۴. فاز ابری آینده: ورود حساب کاربری، مالکیت داده، دسترسی خصوصی، storage عکس و قواعد همگام‌سازی/تعارض. در نسخه فعلی سرور حساب یا sync وجود ندارد.
+
+════════════════════════════════════════
+بخش C — راهنمای سریع برای AI بعدی
+════════════════════════════════════════
+
+۳۲. قبل از هر تغییر
+
+۱. git status --short را بخوان و تغییرات کاربر را حفظ کن.
+۲. این فایل و سند تخصصی مرتبط را بخوان.
+۳. فقط فایل‌های feature/domain/repository مرتبط را باز کن.
+۴. رابطه‌های پایین‌دستی را از بخش ۵ بررسی کن.
+۵. مشخص کن درخواست «وضعیت فعلی» را تغییر می‌دهد یا یکی از backlogها را اجرا می‌کند.
+
+۳۳. چک‌لیست تغییر بر اساس حوزه
+
+تغییر پروژه/وضعیت:
+• project workflow
+• تاریخ‌های milestone
+• فعالیت تاریخی
+• dashboard و calendar
+• backup validation
+• audit/history
+
+تغییر فعالیت:
+• activity repository
+• service progress
+• project activityAudit
+• timeline
+• backup validation
+
+تغییر مالی:
+• contractAmount
+• projectChanges
+• quotations/invoices/payments
+• project panel
+• finance page
+• customer balance
+• dashboard totals
+• timeline
+• backup validation
+
+تغییر schema:
+• Dexie version جدید؛ نسخه قبلی را ویرایش نکن
+• backupTables و types
+• export/import/validation
+• recovery transaction
+• migration test
+
+تغییر UI موبایل:
+• 360, 375, 390, 414, 430
+• عدم overflow
+• touch target نزدیک 44px
+• متن فارسی بلند
+• safe area
+• عدم تغییر tablet/desktop اگر scope فقط موبایل است
+
+تغییر امنیت:
+• رمز یا recovery در log، backup یا UI عادی ظاهر نشود
+• race میان tabها
+• reload/background/idle
+• failure و rate limit
+• توضیح مرز امنیتی به کاربر
+
+۳۴. اسناد همراه
+
+docs/user-guide-fa.txt
+راهنمای کامل فعلی برای تکنسین؛ پس از تغییر UX یا رفتار محصول به‌روزرسانی شود.
+
+docs/workflow-policy.md
+سیاست وضعیت، تاریخ و فعالیت پروژه.
+
+docs/backup-policy.md
+فرمت، اعتبارسنجی و رفتار بازیابی.
+
+docs/lock-policy.md
+رفتار و مرز امنیتی قفل محلی.
+
+docs/roadmap.md
+ترتیب کلان فازها؛ باید با بخش B این سند هماهنگ بماند.
+
+۳۵. تعریف پایان کار برای تغییرات آینده
+
+یک تغییر فقط وقتی کامل است که:
+• رفتار موردنظر در کد پیاده شده باشد.
+• داده قدیمی حفظ یا migration روشن داشته باشد.
+• تست متناسب پاس شود.
+• npm run build با base path انتشار پاس شود.
+• lint خطای تازه نداشته باشد.
+• اسناد کاربر و AI در صورت تغییر رفتار اصلاح شوند.
+• قابلیت موجود و backlog در این سند همگام شوند.
+• پس از درخواست انتشار کاربر، نتیجه GitHub Pages برای همان commit موفق باشد.
+
+پایان سند

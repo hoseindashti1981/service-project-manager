@@ -1,3 +1,5 @@
+import { AccountCard } from '@/components/account-card'
+import { CustomerProjects } from '@/components/customer-projects'
 import { phoneNumber } from '@/domain/customer/contact'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate } from '@/lib/dates'
@@ -115,7 +117,7 @@ export function CustomerDetailPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
+    <div className="space-y-6 max-w-lg"><AccountCard customerId={customerId} title="حساب مشتری"/><CustomerProjects customerId={customerId}/>
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-800">ویرایش مشتری</h2>
         <button

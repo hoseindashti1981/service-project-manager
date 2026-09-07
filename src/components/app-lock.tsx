@@ -1,3 +1,4 @@
+import { LockContext } from '@/domain/security/lock-context'
 import { useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react'
 import { authenticate, LOCK_KEY, prepareLock, readLock, recoveryText, saveLock, type LockConfig } from '@/domain/security/lock'
 
@@ -113,5 +114,5 @@ export function AppLock({children}:{children:ReactNode}) {
   {busy && <p role="status">در حال بررسی…</p>}
   {error && <p role="alert" className="text-rose-700">{error}</p>}
  </main>
- return <><div dir="rtl" className="flex flex-wrap justify-end gap-3 border-b bg-white px-4 py-2 lg:mr-64"><button className="min-h-11 text-sm text-indigo-700" onClick={()=>{clear();setSettings(true);setMinutes(config?.minutes||5)}}>تنظیمات قفل ورود {config?'(فعال)':'(غیرفعال)'}</button>{config && <button className="min-h-11 text-sm" onClick={lock}>قفل کردن</button>}</div>{children}</>
+ return <LockContext.Provider value={{enabled:!!config,open:()=>{clear();setSettings(true);setMinutes(config?.minutes||5)},lock}}>{children}</LockContext.Provider>
 }

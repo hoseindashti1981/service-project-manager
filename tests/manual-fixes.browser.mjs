@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict'
+import {pathToFileURL} from 'node:url'
+import {mkdirSync,readFileSync} from 'node:fs'
+const {chromium}=await import(pathToFileURL(process.env.SPM_PLAYWRIGHT_PATH).href)
+const browser=await chromium.launch({channel:'msedge'}),page=await browser.newPage({viewport:{width:390,height:844}})
+const base='http://127.0.0.1:5173',errors=[];page.on('pageerror',e=>errors.push(e.message));mkdirSync('test-results/manual-fixes',{recursive:true})
+try{
+ await page.route(base+'/migration-check',route=>route.fulfill({contentType:'text/html',body:'<html></html>'}))
+ await page.goto(base+'/migration-check')
+ const migration=await page.evaluate(async()=>{
+  const {db}=await import('/src/db/db.ts'),{default:Dexie}=await import('/node_modules/dexie/dist/dexie.mjs'),{backupFixture}=await import('/tests/backup-fixtures.mjs')
+  const schema=Object.fromEntries(db.tables.filter(t=>!['photos','appSettings'].includes(t.name)).map(t=>[t.name,[t.schema.primKey.src,...t.schema.indexes.map(i=>i.src)].join(',')]))
+  const old=new Dexie(db.name);old.version(6).stores(schema);await old.open()
+  const data=backupFixture();for(const [name,rows] of Object.entries(data))if(name in schema)await old.table(name).bulkPut(rows)
+  old.close();await db.open();const result={version:db.verno,customer:(await db.customers.get('c1')).name,photos:await db.photos.count()}
+  await db.transaction('rw',db.tables,async()=>{for(const t of db.tables)await t.clear()});db.close();return result
+ })
+ assert.equal(migration.version,7);assert.ok(migration.customer);assert.equal(migration.photos,0)
+ await page.goto(base)
+ const result=await page.evaluate(async()=>{
+  const {db}=await import('/src/db/db.ts'),{backupFixture}=await import('/tests/backup-fixtures.mjs'),{financeRepository:f}=await import('/src/db/repositories/finance-repository.ts'),{readAccount}=await import('/src/db/repositories/account-repository.ts'),{backupRepository:b}=await import('/src/db/repositories/backup-repository.ts'),{toISODate}=await import('/src/lib/dates.ts')
+  const data=backupFixture();data.projects[0].contractAmount=20000000;data.projects[0].discount=1000000;data.projectChanges[0].amount=3000000;data.payments[0].amount=10000000;data.reminders[0].dueDate=toISODate();data.projectActivities[0].date=toISODate()
+  for(const [table,rows] of Object.entries(data))await db.table(table).bulkPut(rows)
+  const before=await readAccount('p1')
+  const doc=await f.createInvoice({customerId:'c1',projectId:'p1',date:toISODate(),status:'issued',discount:1000000,lines:[{id:'x',description:'قرارداد و کار اضافه',quantity:1,unitPrice:23000000,total:23000000}]})
+  const after=await readAccount('p1'),customer=await readAccount(undefined,'c1'),global=await readAccount()
+  let rejected=false;try{await f.createPayment({customerId:'wrong',projectId:'p1',amount:100,date:toISODate(),method:'cash'})}catch{rejected=true}
+  const input={customerId:'c1',date:toISODate(),status:'draft',lines:[{id:'z',description:'مستقل',quantity:1,unitPrice:500,total:500}]}
+  const draft=await f.createInvoice(input),withoutDraft=await readAccount()
+  await f.updateInvoice(draft.id,{...input,status:'issued'})
+  const withStandalone=await readAccount()
+  const docs=await Promise.all([f.createQuotation(input),f.createQuotation(input)])
+  const backup=await b.export()
+  return {before,after,customer,global,rejected,withoutDraft,withStandalone,unique:docs[0].number!==docs[1].number,version:backup.version,docId:doc.id}
+ })
+ for(const account of [result.before,result.after,result.customer,result.global,result.withoutDraft])assert.equal(account.balance,12000000)
+ assert.equal(result.withStandalone.balance,12000500);assert.equal(result.rejected,true);assert.equal(result.unique,true);assert.equal(result.version,3)
+ await page.goto(base+'/projects/p1')
+ const services=page.getByRole('button',{name:/خدمات پروژه و قیمت‌ها/});assert.equal(await services.getAttribute('aria-expanded'),'false')
+ const headings=await page.getByRole('heading').allTextContents();assert.ok(headings.indexOf('تاریخچه پروژه')<headings.indexOf('حساب پروژه'))
+ await page.getByText('عکس‌های پروژه (۰)',{exact:true}).click()
+ const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=1800;c.height=1200;const x=c.getContext('2d');x.fillStyle='orange';x.fillRect(0,0,c.width,c.height);return c.toDataURL('image/png').split(',')[1]})
+ await page.getByLabel('شرح عکس').fill('عکس تست')
+ await page.getByLabel('افزودن عکس',{exact:true}).setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')})
+ await page.getByRole('img',{name:'عکس تست',exact:true}).waitFor()
+ const photoResult=await page.evaluate(async()=>{const {db}=await import('/src/db/db.ts'),{backupRepository:b}=await import('/src/db/repositories/backup-repository.ts');const backup=await b.export();await db.photos.clear();await b.import(backup);const restored=await db.photos.toArray();return {count:restored.length,data:restored[0].dataUrl.length,thumb:restored[0].thumbnail.length}})
+ assert.equal(photoResult.count,1);assert.ok(photoResult.data<2000000&&photoResult.thumb<photoResult.data)
+ await page.goto(base+'/activities/today');assert.equal(await page.getByLabel('عنوان فعالیت',{exact:true}).count(),0)
+ await page.getByRole('button',{name:'فعالیت جدید',exact:true}).click();await page.getByLabel('عنوان فعالیت',{exact:true}).fill('یادداشت جدید')
+ await page.getByRole('button',{name:'ثبت فعالیت',exact:true}).click();await page.getByLabel('عنوان فعالیت',{exact:true}).waitFor({state:'hidden'})
+ await page.goto(base+'/calendar');await page.getByRole('button',{name:/، [2-9] رویداد/}).first().click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:/فعالیت.*نصب چراغ/}).click();await page.getByRole('link',{name:'نمایش فعالیت'}).waitFor()
+ await page.goto(base+'/settings');await page.getByLabel('نام کسب‌وکار',{exact:true}).fill('تکنسین آزمایشی');await page.getByRole('button',{name:'ذخیره تنظیمات',exact:true}).click();await page.getByText('تنظیمات ذخیره شد.',{exact:true}).waitFor()
+ await page.goto(base+'/finance');await page.getByRole('button',{name:'پیش‌نمایش',exact:true}).first().click();await page.getByRole('button',{name:'دانلود PDF',exact:true}).waitFor();await page.waitForFunction(()=>Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='دانلود PDF'&&!b.disabled),{},{timeout:30000})
+ const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'دانلود PDF',exact:true}).click();const download=await downloadPromise;await download.saveAs('test-results/manual-fixes/invoice.pdf')
+ await page.screenshot({path:'test-results/manual-fixes/invoice-mobile.png',fullPage:true})
+ assert.ok(await page.locator('.document-sheet').getByText('مشتری: مشتری پشتیبان',{exact:true}).count())
+ await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.sharedFile={name:data.files[0].name,type:data.files[0].type,size:data.files[0].size}}})})
+ await page.getByRole('button',{name:'اشتراک‌گذاری',exact:true}).click()
+ const shared=await page.evaluate(()=>window.sharedFile);assert.ok(shared.name.endsWith('.pdf')&&shared.size>1000);assert.equal(shared.type,'application/pdf')
+ await page.emulateMedia({media:'print'});assert.equal(await page.locator('.no-print').evaluate(el=>getComputedStyle(el).display),'none');assert.equal(await page.locator('.document-sheet').evaluate(el=>getComputedStyle(el).visibility),'visible');await page.emulateMedia({media:'screen'})
+ await page.getByRole('button',{name:'راهنمای این صفحه'}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'بستن راهنما'}).click()
+ for(const width of [360,390,430]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
+ await page.goto(base+'/settings');assert.ok(await page.locator('input,select,textarea').evaluateAll(nodes=>nodes.every(n=>parseFloat(getComputedStyle(n).fontSize)>=16)));assert.ok(!/user-scalable\s*=\s*no|maximum-scale\s*=\s*1/.test(await page.locator('meta[name="viewport"]').getAttribute('content')))
+ await page.evaluate(async()=>{const {financeRepository:f}=await import('/src/db/repositories/finance-repository.ts');await f.createInvoice({customerId:'c1',date:'2026-09-07',status:'issued',lines:Array.from({length:60},(_,i)=>({id:'long'+i,description:'شرح کامل خدمت شماره '+i,quantity:1,unitPrice:1000,total:1000}))})})
+ await page.goto(base+'/finance');await page.getByRole('button',{name:'پیش‌نمایش',exact:true}).first().click();await page.waitForFunction(()=>Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='دانلود PDF'&&!b.disabled),{},{timeout:30000})
+ const multi=page.waitForEvent('download');await page.getByRole('button',{name:'دانلود PDF',exact:true}).click();await (await multi).saveAs('test-results/manual-fixes/invoice-multipage.pdf')
+ assert.ok((readFileSync('test-results/manual-fixes/invoice-multipage.pdf','latin1').match(/\/Type \/Page\b/g)||[]).length>1)
+ assert.deepEqual(errors,[])
+ console.log('Financial source of truth, standalone invoices, discount, atomic numbering, photo backup roundtrip, collapsed UI, calendar, settings, help and PDF passed.')
+}finally{await browser.close()}

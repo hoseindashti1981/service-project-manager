@@ -21,6 +21,7 @@ export interface Project {
   workType?: string
   /** مبلغ توافق اولیه؛ کارهای اضافه جداگانه ثبت می‌شوند. */
   contractAmount?: Money
+  discount?: Money
   agreementDate?: string
   executionStartDate?: string
   deliveryDate?: string
