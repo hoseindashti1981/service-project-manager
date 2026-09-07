@@ -1,5 +1,5 @@
 export interface Photo {id:string;projectId:string;activityId?:string;title:string;date:string;dataUrl:string;thumbnail:string;bytes:number;createdAt:number;updatedAt:number}
-export interface AppSettings {id:'business';description?:string;defaultActivityRange?:'all'|'today';name:string;phone:string;address:string;logo?:string;banner?:string;favicon?:string;color:string;paymentInfo:string;createdAt:number;updatedAt:number}
+export interface AppSettings {id:'business';description?:string;helpOverrides?:Record<string,string>;defaultActivityRange?:'all'|'today';name:string;phone:string;address:string;logo?:string;banner?:string;favicon?:string;color:string;paymentInfo:string;createdAt:number;updatedAt:number}
 export const defaultSettings:AppSettings={id:'business',name:'لاین‌یار',phone:'',address:'',color:'#4f46e5',paymentInfo:'',createdAt:0,updatedAt:0}
 export async function compressImage(file:File,max=1600){
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>20*1024*1024)throw Error('عکس JPG، PNG یا WebP تا ۲۰ مگابایت انتخاب کنید.')

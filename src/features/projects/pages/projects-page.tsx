@@ -1,3 +1,4 @@
+import {ProjectNavigation} from '@/components/project-navigation'
 import { projectStatusLabels as statusLabels, projectStatusOptions } from '@/domain/project/status'
 import { useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -100,15 +101,13 @@ export function ProjectsPage() {
       {!loading && visibleProjects.length > 0 && (
         <div className="space-y-3">
           {visibleProjects.map((project) => (
-            <Link
+            <article
               key={project.id}
-              to="/projects/$projectId"
-              params={{ projectId: project.id }}
               className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-slate-400 transition"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-bold text-slate-800">{project.title}</h3>
+                  <h3 className="font-bold text-slate-800"><Link to="/projects/$projectId" params={{projectId:project.id}} className="block min-h-11">🔧 {project.title}</Link></h3>
                   <p className="text-sm text-slate-500 mt-1">
                     {customers[project.customerId]?.name || 'مشتری نامشخص'}
                   </p>
@@ -122,12 +121,14 @@ export function ProjectsPage() {
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
                     {statusLabels[project.status] || project.status}
                   </span>
+                  <Link to="/projects/$projectId" params={{projectId:project.id}} hash="photos" className="mt-2 block min-h-11 rounded-lg bg-violet-50 px-2 py-2 text-sm text-violet-800">🖼️ گالری عکس‌ها</Link>
                   <div className="text-xs text-slate-400 mt-2">
                     {formatDateFa(project.startDate || project.createdAt)}
                   </div>
                 </div>
               </div>
-            </Link>
+              <ProjectNavigation project={project}/>
+            </article>
           ))}
         </div>
       )}

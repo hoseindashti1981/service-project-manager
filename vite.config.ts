@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'], importScripts: ['reminder-notification.js'] },
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        includeAssets: ['favicon.svg', 'apple-touch-icon-v050.png'],
         manifest: {
           name: 'مدیریت پروژه و خدمات فنی',
           short_name: 'مدیریت پروژه',
@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => {
           start_url: base,
           scope: base,
           icons: [
-            { src: 'pwa-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
+            { src: 'pwa-192-v050.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: 'pwa-512-v050.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
           ]
         }
       })

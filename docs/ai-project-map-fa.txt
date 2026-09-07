@@ -377,7 +377,7 @@ Payment:
 فاکتورِ دارای projectId در هیچ وضعیت، طلب دوباره ایجاد نمی‌کند. قرارداد و کار اضافه و تخفیف، حتی پیش از صدور فاکتور منبع حساب پروژه‌اند. هیچ وضعیت پروژه‌ای به‌تنهایی بدهی را حذف نمی‌کند.
 سند مستقل بدون projectId، فقط در وضعیت issued یا paid طلب جدا به حساب مشتری اضافه می‌کند؛ draft/void و تمام quotations طلب نیستند. این استثنا صریح برای اسناد مستقل است، نه تغییر منبع طلب پروژه.
 ProjectItem قیمت‌دار، مبلغ یادداشتی فعالیت، هزینه و مصالح، طلب خودکار ایجاد نمی‌کنند.
-منبع محاسبه: src/domain/finance/account.ts. بارگذاری مشترک: src/db/repositories/account-repository.ts. readAccount در پروژه/مشتری/مالی/داشبورد/گزارش‌ها استفاده می‌شود.
+منبع محاسبه کل حساب: src/domain/finance/account.ts. بارگذاری مشترک: src/db/repositories/account-repository.ts. readAccount در پروژه/مشتری/مالی/گزارش‌ها استفاده می‌شود. داشبورد با readDailyAccount فقط گردش مالی تاریخ امروز را نشان می‌دهد.
 پرداخت قدیمیِ فاقد projectId از invoiceId معتبر همان مشتری به پروژه نسبت داده می‌شود؛ فقط یک‌بار کسر می‌شود. ریز دریافتی و حساب پروژه این نسبت‌دهی را نشان می‌دهند.
 مبالغ نمایش‌داده‌شده با برچسب دریافت، بدهکار یا بستانکار هستند؛ عدد منفی بی‌عنوان حذف شده است.
 سند پروژه از قرارداد و کار اضافه پیشنهاد می‌شود و کاربر ردیف‌ها را بازبینی و صدور را تأیید می‌کند. تغییر discount/tax/extraFee سند فقط جمع سند را تغییر می‌دهد؛ برای تغییر طلب واقعی باید قرارداد، کار اضافه یا تخفیف پروژه اصلاح شود. پیش‌نمایش این تفاوت را صریح می‌گوید.
@@ -532,7 +532,7 @@ lint فعلی تعدادی warning قدیمی set-state-in-effect و exhaustive-
 ════════════════════════════════════════
 
 اصلاحات ۲۰ تا ۲۹ و ۳۱/۳۲ پیاده‌سازی شده‌اند:
-• کارت حساب پروژه، جمع مشتری و داشبورد از منبع مالی واحد؛ ریز کار اضافه و پرداخت، تخفیف پروژه و سند.
+• کارت حساب پروژه و جمع مشتری از منبع مالی واحد؛ داشبورد خلاصه گردش امروز بر اساس همین اقلام دارد؛ ریز کار اضافه و پرداخت، تخفیف پروژه و سند.
 • preview و چاپ/اشتراک فاکتور و پیش‌فاکتور با اطلاعات کسب‌وکار، ردیف‌ها، سررسید، شرایط و امضا.
 • گردش کار سپس تاریخچه در بالای پروژه؛ خدمات پیش‌فرض بسته با خلاصه تعداد و پیشرفت، بسته‌شدن پس از ذخیره.
 • فعالیت روزانه ابتدا تاریخچه؛ فرم با «فعالیت جدید» باز و پس از ذخیره/انصراف بسته می‌شود. مقدار/مبلغ و خدمت قیمت‌دار opt-in هستند.
@@ -657,3 +657,8 @@ docs/roadmap.md
 • پس از درخواست انتشار کاربر، نتیجه GitHub Pages برای همان commit موفق باشد.
 
 پایان سند
+
+Release 0.5.0: Daily dashboard finance is readDailyAccount(date), a daily movement summary: contract-discount on agreementDate || startDate || local createdAt; projectChanges.date; standalone issued/paid invoice.date; minus payment.date. Project invoices never duplicate debt. Global readAccount semantics unchanged.
+AppSettings.helpOverrides stores per-route plain-text help, /projects/new and /projects/detail, /customers/new and /customers/detail, plus /full. Backup v3 validates and preserves it; settings save merges current overrides transactionally. User edits are local, full guide TXT export is available.
+ProjectNavigation shares coordinates and a Google Maps directions URL via native Web Share with clipboard and Neshan search fallbacks. Neshan web search verified with latitude, longitude decimal English digits. PhotoViewer uses a native dialog and horizontal scroll snap; project gallery links use #photos. Invoice preview and PDF clone share document-style.css.
+Canonical published icon is public/pwa-icon.svg, favicon.svg matches it; PNG 192/512 and Apple 180 assets are versioned v050. Local business.favicon changes browser favicon MIME and source, not GitHub or installed manifest icons.

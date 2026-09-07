@@ -29,7 +29,7 @@ function RootContent() {
   const isActive = (to: string) => to === '/' ? pathname === '/' : pathname.startsWith(to)
   const primaryMobile = navigation.filter(item=>['/','/projects','/customers'].includes(item.to))
   const business=useBusiness()
-  useEffect(()=>{let icon=document.querySelector<HTMLLinkElement>('link[rel="icon"]');if(!icon){icon=document.createElement('link');icon.rel='icon';document.head.appendChild(icon)}const previous=icon.href; if(business.favicon)icon.href=business.favicon;return()=>{icon!.href=previous}},[business.favicon])
+  useEffect(()=>{let icon=document.querySelector<HTMLLinkElement>('link[rel="icon"]');if(!icon){icon=document.createElement('link');icon.rel='icon';document.head.appendChild(icon)}const previous=icon.href,previousType=icon.type; if(business.favicon){icon.href=business.favicon;icon.type=business.favicon.match(/^data:([^;]+)/)?.[1]||'image/png'}return()=>{icon!.href=previous;icon!.type=previousType}},[business.favicon])
 
   return <div data-app-shell style={{"--brand-color":business.color} as CSSProperties} className="min-h-screen bg-slate-50 text-slate-900">
     <aside className="fixed inset-y-0 right-0 z-30 hidden w-64 border-l border-slate-200 bg-white p-4 lg:flex lg:flex-col">

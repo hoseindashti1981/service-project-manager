@@ -94,6 +94,7 @@ function validateRow(table: BackupTable, row: Row, where: string) {
       for(const key of ['dataUrl','thumbnail'])field(row,key,value=>typeof value==='string'&&value.length<=2000000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(value),where)
       break
     case 'appSettings':
+      if(row.helpOverrides!==undefined&&(!object(row.helpOverrides)||Object.keys(row.helpOverrides).length>30||Object.entries(row.helpOverrides).some(([key,value])=>!/^\/[a-z/]*$/.test(key)||key.length>60||typeof value!=='string'||value.length>200000)))fail(where,'helpOverrides')
       field(row,'defaultActivityRange',choice(['all','today']),where,true)
       if(row.id!=='business')fail(where,'id');field(row,'description',text,where,true)
       for(const key of ['name','phone','address','paymentInfo'])field(row,key,text,where)

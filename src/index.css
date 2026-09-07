@@ -3,6 +3,7 @@
 @import "@fontsource/vazirmatn/600.css";
 @import "@fontsource/vazirmatn/700.css";
 @import "tailwindcss";
+@import "./features/finance/document-style.css";
 
 /* تنظیمات پایه فارسی و RTL */
 html {
@@ -15,6 +16,21 @@ body {
   min-height: 100vh;
   background-color: #f8fafc;
   color: #0f172a;
+}
+
+@media screen {
+  [data-app-shell]{background:linear-gradient(145deg,#f2f6fc 0%,#f9f5fb 50%,#f0f8f6 100%)!important}
+  [data-app-shell] :where(.border,.border-t,.border-b,.border-l,.border-r){border-color:#dce4ef}
+  [data-app-shell] :where(main section.bg-white,main article.bg-white,main form.bg-white,main details.bg-white){background:linear-gradient(135deg,#fff,#f8faff);box-shadow:0 4px 18px #50658c08;border-color:#dce4ef}
+  [data-app-shell] :where(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]),textarea,select){background-color:#fafcff;border-color:#d8e2ee;color:#34445b;transition:border-color .15s,box-shadow .15s}
+  [data-app-shell] :where(input,textarea,select):focus-visible{outline:2px solid #91a8da;outline-offset:2px;box-shadow:0 0 0 4px #e8efff}
+  [data-app-shell] :where(button,a).bg-slate-800{background:linear-gradient(120deg,#536c96,#687eb5)}
+  [data-app-shell] :where(button,a):focus-visible{outline:2px solid #8fa9d5;outline-offset:3px}
+  [data-app-shell] summary{color:#455e87}
+  [data-app-shell] h2{letter-spacing:-.025em}
+  [data-app-shell] header{border-bottom-color:#dce4ef}
+  [data-app-shell] dialog{border:1px solid #dce4ef;box-shadow:0 20px 80px #20365f30}
+  [data-app-shell] button:disabled{cursor:not-allowed}
 }
 
 .project-map-pin { font-size: 30px; line-height: 40px; }
@@ -30,12 +46,10 @@ textarea {
 
 @media (max-width: 640px) {
   input, textarea, select { font-size: 16px !important; }
+  [data-app-shell] [aria-label="وضعیت پروژه‌ها"] > a { background: #fff !important; }
 }
 
-.document-sheet { font-family: Vazirmatn, Tahoma, sans-serif; background: white; color: #0f172a; padding: 24px; }
 [data-app-shell] .bg-indigo-600, [data-app-shell] .bg-indigo-700 { background-color: var(--brand-color); }
-.document-sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.document-sheet th,.document-sheet td { padding: 8px 4px; border-bottom: 1px solid #ddd; overflow-wrap: anywhere; }
 @media print {
   @page { size: A4; margin: 12mm; }
   body * { visibility: hidden; }
