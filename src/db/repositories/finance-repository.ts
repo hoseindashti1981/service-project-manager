@@ -1,7 +1,8 @@
+import {savePayment,deletePayment} from './payment-mutations'
 import { requireDate } from '@/lib/dates'
 import { db } from '@/db/db'
 import { readAccount } from './account-repository'
-import type { CreateInvoiceInput,CreatePaymentInput,CreateQuotationInput,Invoice,Quotation,Payment } from '@/domain/finance/types'
+import type { CreateInvoiceInput,CreateQuotationInput,Invoice,Quotation } from '@/domain/finance/types'
 const money=(n:number)=>{if(!Number.isSafeInteger(n)||n<0)throw Error('مبلغ باید صحیح و نامنفی باشد.');return n}
 async function links(customerId:string,projectId?:string){if(!await db.customers.get(customerId))throw Error('مشتری یافت نشد.');if(projectId&&(await db.projects.get(projectId))?.customerId!==customerId)throw Error('پروژه متعلق به مشتری نیست.')}
 async function save(kind:'invoice'|'quotation',input:CreateInvoiceInput|CreateQuotationInput,id?:string){return db.transaction('rw',db.invoices,db.quotations,db.projects,db.customers,db.payments,async()=>{
@@ -24,15 +25,7 @@ export const financeRepository={
  createInvoice:(input:CreateInvoiceInput)=>save('invoice',input) as Promise<Invoice>,createQuotation:(input:CreateQuotationInput)=>save('quotation',input) as Promise<Quotation>,
  updateInvoice:(id:string,input:CreateInvoiceInput)=>save('invoice',input,id) as Promise<Invoice>,updateQuotation:(id:string,input:CreateQuotationInput)=>save('quotation',input,id) as Promise<Quotation>,
  async voidInvoice(id:string,reason?:string){const old=await db.invoices.get(id);if(!old)throw Error('فاکتور یافت نشد.');if(!reason?.trim())throw Error('دلیل ابطال لازم است.');const next={...old,status:'void' as const,voidReason:reason,updatedAt:Date.now()};await db.invoices.put(next);return next},
- async createPayment(input:CreatePaymentInput):Promise<Payment>{return db.transaction('rw',db.payments,db.invoices,db.projects,db.customers,async()=>{
-  requireDate(input.date);money(input.amount);if(!input.amount)throw Error('پرداخت باید مثبت باشد.');if(!['cash','card','transfer','cheque','other'].includes(input.method))throw Error('روش پرداخت نامعتبر است.')
-  let projectId=input.projectId;const invoice=input.invoiceId?await db.invoices.get(input.invoiceId):undefined
-  if(input.invoiceId&&(!invoice||['void','draft'].includes(invoice.status)||invoice.customerId!==input.customerId))throw Error('فاکتور معتبر مشتری را انتخاب کنید.')
-  if(invoice){if(projectId&&projectId!==invoice.projectId)throw Error('پروژه پرداخت و فاکتور یکسان نیست.');projectId=invoice.projectId}
-  await links(input.customerId,projectId)
-  const payment={...input,projectId,id:crypto.randomUUID(),createdAt:Date.now(),updatedAt:Date.now()};await db.payments.add(payment)
-  if(invoice){const paid=(await db.payments.where('invoiceId').equals(invoice.id).toArray()).reduce((s,p)=>s+p.amount,0);if(paid>=invoice.total)await db.invoices.update(invoice.id,{status:'paid',updatedAt:Date.now()})}return payment
- })},
+ createPayment:savePayment,updatePayment:savePayment,deletePayment,
  getQuotations:()=>db.quotations.orderBy('createdAt').reverse().toArray(),getInvoices:()=>db.invoices.orderBy('createdAt').reverse().toArray(),getPayments:()=>db.payments.orderBy('date').reverse().toArray(),
  balanceForProject:async(id:string)=>(await readAccount(id)).balance,balanceForCustomer:async(id:string)=>(await readAccount(undefined,id)).balance,
 }

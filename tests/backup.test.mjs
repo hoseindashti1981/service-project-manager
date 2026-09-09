@@ -9,8 +9,13 @@ function url(path,imports={}) {
  for(const [key,value] of Object.entries(imports)) outputText=outputText.replaceAll(`'${key}'`,`'${value}'`)
  return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
 }
-const {parseBackup,createBackup,inspectBackup}=await import(url('../src/domain/backup/validation.ts',{'@/lib/dates':url('../src/lib/dates.ts'),'./types':url('../src/domain/backup/types.ts')}))
+const {parseBackup,createBackup,inspectBackup}=await import(url('../src/domain/backup/validation.ts',{'../project/dashboard-order':url('../src/domain/project/dashboard-order.ts'),'@/lib/dates':url('../src/lib/dates.ts'),'./types':url('../src/domain/backup/types.ts')}))
 const legacy=data=>({version:1,exportedAt:'2025-01-05T12:00:00.000Z',data})
+test('dashboard priorities survive backup and reject duplicate or unknown statuses',async()=>{
+ const data=backupFixture();data.appSettings=[{id:'business',name:'test',phone:'',address:'',color:'#4f46e5',paymentInfo:'',createdAt:1,updatedAt:1,dashboardProjectOrder:['draft','paused','delivered','in_progress']}]
+ const preview=await inspectBackup(await createBackup(data));assert.deepEqual(preview.data.appSettings[0].dashboardProjectOrder,data.appSettings[0].dashboardProjectOrder)
+ for(const order of [['draft','draft','paused','delivered'],['planned','draft','paused','delivered'],[]]){data.appSettings[0].dashboardProjectOrder=order;assert.throws(()=>parseBackup(legacy(data)))}
+})
 
 test('version 2 checksum is verified before adding empty media and settings tables',async()=>{
  const data=backupFixture();delete data.photos;delete data.appSettings

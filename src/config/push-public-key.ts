@@ -1,0 +1,1 @@
+export const defaultPushPublicKey="BO0Mg26EnW-DKrAXnFnvyjL2oH7GtPiD_ONg-W90eepGG97Ht6DwCxuznNjQO4OrEj6eKTyIdYzCNVYsv5u41UY"

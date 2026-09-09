@@ -1,3 +1,4 @@
+import {ServicePicker} from '@/components/service-picker'
 import { liveQuery } from 'dexie'
 import { activityRepository } from '@/db/repositories/activity-repository'
 import type { ProjectActivity } from '@/domain/activity/types'
@@ -68,7 +69,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
     {open && <>
     <p className="text-xs text-slate-500">قیمت هر ردیف مستقل از کاتالوگ ذخیره می‌شود. جمع خدمات، مبلغ توافق اولیه را تغییر نمی‌دهد.</p>
     <form onSubmit={(event) => void submit(event)} className="grid gap-3">
-      <label>انتخاب از کاتالوگ<select value={serviceId} onChange={(event) => selectService(event.target.value)} className={field}><option value="">خدمت سفارشی</option>{serviceId && !services.some((service) => service.id === serviceId) && <option value={serviceId}>خدمت غیرفعال</option>}{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
+      <ServicePicker services={services} value={serviceId} onChange={selectService} disabled={busy}/>
       <div><p className="text-sm">تاریخ خدمت (شمسی)</p><JalaliDatePicker label="تاریخ خدمت" value={date} onChange={setDate} disabled={busy} /></div><label>عنوان خدمت<input required value={title} onChange={(event) => setTitle(event.target.value)} className={field} /></label>
       <div className="grid grid-cols-2 gap-3"><label>مقدار<input required inputMode="decimal" value={quantity} onChange={(event) => setQuantity(normalizeDigits(event.target.value))} className={field} /></label><label>واحد<select value={unit} onChange={(event) => setUnit(event.target.value as Unit)} className={field}>{serviceUnits.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label></div>
       <label>قیمت واحد (تومان)<input required inputMode="numeric" value={price} onChange={(event) => setPrice(normalizeDigits(event.target.value))} className={field} /></label>
