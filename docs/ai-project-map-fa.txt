@@ -1,11 +1,11 @@
 نقشه فنی و روابط اپلیکیشن لاین‌یار برای AI
 Service Project Manager — AI Project Map
 
-آخرین به‌روزرسانی سند: ۱۴۰۵/۰۶/۱۶ (2026-09-07)
+آخرین به‌روزرسانی سند: ۱۴۰۵/۰۶/۱۸ (2026-09-09)؛ نسخه 0.6.0، شامل تغییر نوار پیشرفت داشبورد
 وضعیت سند: مرجع زنده؛ باید همراه تغییرات کد به‌روزرسانی شود.
 
 اصلاحات موبایل و یادآوری:
-ReminderAlert داخل بخش بازشده AppLock در همه صفحات، یادآوری امروز و عقب‌افتاده را نشان می‌دهد. useToday در تغییر روز و بازگشت به برنامه تاریخ محلی را تازه می‌کند. کارت داشبورد امروز را اولویت می‌دهد. اعلان سیستم اختیاری، با اجازه کاربر و showNotification هنگام بازبودن برنامه است؛ push/scheduling در حالت بسته وجود ندارد. کلید جلوگیری از اعلان تکراری در localStorage مستقل از بکاپ است.
+ReminderAlert داخل بخش بازشده AppLock در همه صفحات، یادآوری امروز و عقب‌افتاده را نشان می‌دهد. useToday در تغییر روز و بازگشت به برنامه تاریخ محلی را تازه می‌کند. کارت داشبورد امروز را اولویت می‌دهد. اعلان سیستم اختیاری، با اجازه کاربر و showNotification هنگام بازبودن برنامه است؛ دریافت Web Push در Worker پیاده شده، اما فرستنده و scheduling سرور وجود ندارد. کلید جلوگیری از اعلان تکراری در localStorage مستقل از بکاپ است.
 LocationField کنار آدرس فرم ایجاد/ویرایش پروژه است؛ Leaflet و tiles آنلاین OpenStreetMap با attribution، انتخاب/کشیدن نشانگر و watchPosition با دقت بالا. مختصات فقط با ذخیره فرم در Project می‌ماند؛ متن آدرس بازنویسی نمی‌شود. watch در توقف، خروج و پس‌زمینه پاک می‌شود. ProjectLocation قدیمی دیگر در صفحه استفاده نمی‌شود.
 آپلود چند عکس به‌ترتیب فشرده و مستقل ذخیره می‌شود؛ شکست یک فایل یا quota عکس‌های موفق را برنمی‌گرداند، نتیجه و نام فایل‌های ناموفق نمایش داده می‌شود. انصراف ویرایش مشتری به فهرست برمی‌گردد و ذخیره نمی‌کند.
 tests/mobile-followups.browser.mjs این رفتارها را با tileهای ساختگی (بدون دانلود نقشه در تست) بررسی می‌کند.
@@ -14,7 +14,7 @@ tests/mobile-followups.browser.mjs این رفتارها را با tileهای س
 README.md معرفی فارسی/انگلیسی، نصب، حساب، امنیت، توسعه، تست و انتشار را پوشش می‌دهد. index.html زبان fa/RTL و متادیتای معرفی دارد.
 AppUpdatePanel در تنظیمات با src/lib/app-updates.ts نسخه Service Worker را بررسی و دریافت می‌کند؛ اجرای نسخه جدید فقط با دکمه جدا صفحه را reload می‌کند. IndexedDB، localStorage و cacheها دستی پاک نمی‌شوند. حالت آفلاین، نبود registration، شکست نصب و timeout پیام دارند. ثبت خودکار موجود vite-plugin-pwa حفظ شده است.
 tests/app-updates.browser.mjs با سرور محلی و دو نسخه واقعی Service Worker، دریافت/اجرای آپدیت و حفظ اطلاعات را آزمایش می‌کند. ابتدا بیلد با VITE_BASE_PATH=/service-project-manager/ ساخته شود.
-.env.example تنها VITE_BASE_PATH را معرفی می‌کند؛ مقدار انتشار در workflow موجود است. کلید یا secret جدید لازم نیست و VITE_* عمومی است.
+.env.example شامل VITE_BASE_PATH و تنظیمات اختیاری VITE_WEB_PUSH_PUBLIC_KEY / VITE_WEB_PUSH_SUBSCRIPTION_ENDPOINT است. کلید عمومی پیش‌فرض در src/config/push-public-key.ts قرار دارد. کلید خصوصی متناظر فقط در .env.vapid.local نادیده‌گرفته‌شده است و همراه clone دریافت نمی‌شود؛ همه VITE_* عمومی‌اند. راهنمای کلید و subscription: docs/web-push.md.
 
 هدف سند
 این فایل خلاصه‌ای قابل اتکا از معماری، روابط داده، قواعد دامنه، مسیرهای رابط، قابلیت‌های موجود و کارهای باقی‌مانده است. AI بعدی باید قبل از بررسی گسترده مخزن، این فایل را بخواند و سپس فقط فایل‌های مرتبط با درخواست جاری را باز کند.
@@ -381,7 +381,7 @@ ProjectItem قیمت‌دار، مبلغ یادداشتی فعالیت، هزی�
 پرداخت قدیمیِ فاقد projectId از invoiceId معتبر همان مشتری به پروژه نسبت داده می‌شود؛ فقط یک‌بار کسر می‌شود. ریز دریافتی و حساب پروژه این نسبت‌دهی را نشان می‌دهند.
 مبالغ نمایش‌داده‌شده با برچسب دریافت، بدهکار یا بستانکار هستند؛ عدد منفی بی‌عنوان حذف شده است.
 سند پروژه از قرارداد و کار اضافه پیشنهاد می‌شود و کاربر ردیف‌ها را بازبینی و صدور را تأیید می‌کند. تغییر discount/tax/extraFee سند فقط جمع سند را تغییر می‌دهد؛ برای تغییر طلب واقعی باید قرارداد، کار اضافه یا تخفیف پروژه اصلاح شود. پیش‌نمایش این تفاوت را صریح می‌گوید.
-شماره سند در تراکنش با بیشینه شماره سال ساخته می‌شود. سند باطل یا تسویه‌شده و فاکتور دارای پرداخت قابل ویرایش نیست. پرداخت به سند draft/void یا مشتری/پروژه نامرتبط رد می‌شود. ایجاد پرداخت و به‌روزرسانی وضعیت paid تراکنشی است. ابطال، پرداخت را حذف نمی‌کند.
+شماره سند در تراکنش با بیشینه شماره سال ساخته می‌شود. سند باطل یا تسویه‌شده و فاکتور دارای پرداخت قابل ویرایش نیست. پرداخت به سند draft/void یا مشتری/پروژه نامرتبط رد می‌شود. ایجاد، ویرایش و حذف پرداخت در payment-mutations.ts تراکنشی است؛ با جابه‌جایی پرداخت، هر دو فاکتور قدیم و جدید تطبیق می‌یابند. وضعیت issued/paid با مجموع پرداخت‌ها محاسبه می‌شود؛ void/draft تغییر نمی‌کند. اتصال جدید به draft/void رد می‌شود، اصلاح اتصال قبلی همان سند مجاز است. expectedUpdatedAt مانع بازنویسی تغییر هم‌زمان است. رابط PaymentActions در مالی ← ریز دریافتی‌ها قرار دارد؛ حذف تأیید می‌خواهد. ابطال، پرداخت را حذف نمی‌کند.
 snapshot اطلاعات کسب‌وکار و مشتری در سند جدید ذخیره می‌شود؛ سند قدیمی بدون snapshot با اطلاعات فعلی پیش‌نمایش می‌شود.
 فاکتور و پیش‌فاکتور: preview، A4 print، PDF با html2canvas و jsPDF موجود، Web Share فایل در صورت پشتیبانی و fallback دانلود. فایل قبل از کلیک آماده می‌شود تا user activation حفظ شود. QR اختیاری از تصویر بارگذاری‌شده است، تولید خودکار QR نیست.
 
@@ -560,6 +560,8 @@ src/features/settings/settings-page.tsx
 src/domain/security/lock-context.ts و src/domain/use-business.ts
 
 کارهای واقعی باقی‌مانده:
+• سرور امن ثبت subscription، ارسال و زمان‌بندی یادآوری، لغو/اصلاح موعد و مدیریت اشتراک نامعتبر؛ دریافت واقعی روی iOS هنوز نیازمند آزمون دستگاه است.
+• نسخه native با Capacitor/SQLite صرفاً گفت‌وگوی آموزشی و گزینه آینده است؛ نه پیاده شده و نه تصمیم قطعی مهاجرت. دیتابیس فعلی Dexie/IndexedDB باقی است.
 ۱. آزمون پذیرش کاربر روی گوشی واقعی، به‌خصوص iOS Safari/PWA، share sheet و چاپ.
 ۲. چند هفته استفاده از عکس‌های واقعی برای سنجش کیفیت، حجم و سرعت؛ این مرحله با تست مصنوعی تمام نمی‌شود.
 ۳. ادامه فازهای محصول بر اساس بازخورد.
@@ -656,7 +658,6 @@ docs/roadmap.md
 • قابلیت موجود و backlog در این سند همگام شوند.
 • پس از درخواست انتشار کاربر، نتیجه GitHub Pages برای همان commit موفق باشد.
 
-پایان سند
 
 Release 0.5.0: Daily dashboard finance is readDailyAccount(date), a daily movement summary: contract-discount on agreementDate || startDate || local createdAt; projectChanges.date; standalone issued/paid invoice.date; minus payment.date. Project invoices never duplicate debt. Global readAccount semantics unchanged.
 AppSettings.helpOverrides stores per-route plain-text help, /projects/new and /projects/detail, /customers/new and /customers/detail, plus /full. Backup v3 validates and preserves it; settings save merges current overrides transactionally. User edits are local, full guide TXT export is available.
@@ -664,3 +665,15 @@ ProjectNavigation offers a direct Apple Maps/Google Maps/Neshan picker and coord
 Canonical published icon is public/pwa-icon.svg, favicon.svg matches it; PNG 192/512 and Apple 180 assets are versioned v050. Local business.favicon changes browser favicon MIME and source, not GitHub or installed manifest icons.
 
 نسخه 0.6.0: dashboardProjectOrder اختیاری در appSettings.business، همراه اعتبارسنجی و بکاپ، فقط ترتیب لیست داشبورد را تعیین می‌کند. payment-mutations.ts منبع مشترک ایجاد/ویرایش/حذف تراکنشی پرداخت و تطبیق وضعیت فاکتور است؛ ویرایش از expectedUpdatedAt برای جلوگیری از بازنویسی هم‌زمان استفاده می‌کند. ServicePicker کل کاتالوگ را با جستجو و اسکرول نمایش می‌دهد. Web Push کلاینت در src/lib/web-push.ts و رویدادهای Worker در public/reminder-notification.js قرار دارند؛ تنظیمات و کلیدها و آزمون iOS در docs/web-push.md شرح داده شده‌اند. اشتراک localStorage از بکاپ کسب‌وکار جداست؛ کلید خصوصی فقط در فایل نادیده‌گرفته‌شده .env.vapid.local می‌ماند. نشان از scheme مقصد پشتیبانی می‌کند و لینک وب حفظ شده است.
+
+
+نوار پیشرفت داشبورد (پس از نسخه 0.6.0، بدون تغییر شماره package):
+src/components/project-progress.tsx در انتهای هر کارت لیست HomePage رندر می‌شود. liveQuery خدمات و فعالیت‌های همان projectId را از projectItems و projectActivities می‌خواند. درصد برابر میانگین ساده گرد‌شده serviceProgress.percent خدمات است؛ بدون وزن مالی یا جمع واحدهای ناهمگون. بدون خدمت صفر، در انتظار خواندن یا خطا «—». فعالیت عمومی یا واحد نامنطبق در پیشرفت خدمت حساب نمی‌شود. درصد هر خدمت حداکثر 100 است. وضعیت completed/delivered درصد را تحمیل نمی‌کند. نوار سبز role=progressbar و aria-valuenow دارد و reduced-motion رعایت می‌شود. رنگ ثابت سبز است. عنوان، مشتری، تاریخ و برچسب وضعیت موجود حفظ شده‌اند.
+
+آزمون‌های جدید مستقل از npm run test:browser:
+tests/settings-payments-push.browser.mjs: ترتیب و حفظ تنظیمات، کاتالوگ بلند و جستجو، اصلاح/حذف پرداخت، URL نشان و subscription ساختگی.
+tests/payment-corrections.browser.mjs: جابه‌جایی پرداخت بین دو فاکتور، رد ویرایش stale و بازگشت وضعیت پس از حذف.
+tests/web-push-worker.test.mjs: payload ناقص و مسیر امن notificationclick؛ همراه npm test اجرا می‌شود.
+tests/dashboard-mobile.browser.mjs: پنج عرض موبایل و نبود overflow؛ با نوار پیشرفت نیز پاس شده است. این آزمون جای آزمون APNs یا اجرای واقعی نشان روی آیفون نیست.
+
+پایان سند
