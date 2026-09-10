@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'], importScripts: ['reminder-notification.js'] },
-        includeAssets: ['favicon.svg', 'apple-touch-icon-v050.png'],
+        includeAssets: ['favicon-v061.png', 'apple-touch-icon-v061.png'],
         manifest: {
           id: base,
           name: 'لاین‌یار',
@@ -32,8 +32,8 @@ export default defineConfig(({ mode }) => {
           start_url: base,
           scope: base,
           icons: [
-            { src: 'pwa-192-v050.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: 'pwa-512-v050.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
+            { src: 'pwa-192-v061.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: 'pwa-512-v061.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
           ]
         }
       })

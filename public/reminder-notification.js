@@ -14,7 +14,7 @@ self.addEventListener('push', event => {
   if (!payload || typeof payload !== 'object') payload = {}
   const title = typeof payload.title === 'string' ? payload.title.slice(0, 160) : 'لاین‌یار'
   const body = typeof payload.body === 'string' ? payload.body.slice(0, 2000) : 'پیام تازه‌ای برای شما دریافت شد.'
-  event.waitUntil(self.registration.showNotification(title, { body, tag: 'lineyar-push', icon: new URL('pwa-192-v050.png', self.registration.scope).href, data: { kind: 'lineyar-push', url: pushTarget(payload.url) } }))
+  event.waitUntil(self.registration.showNotification(title, { body, tag: 'lineyar-push', icon: new URL('pwa-192-v061.png', self.registration.scope).href, data: { kind: 'lineyar-push', url: pushTarget(payload.url) } }))
 })
 self.addEventListener('notificationclick', event => {
   if (event.notification.tag !== 'lineyar-due-reminders' && event.notification.tag !== 'lineyar-push') return
