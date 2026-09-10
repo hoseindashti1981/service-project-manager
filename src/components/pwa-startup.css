@@ -1,0 +1,15 @@
+.pwa-startup{position:fixed;inset:0;z-index:1000;min-height:100dvh;overflow:auto;background:radial-gradient(ellipse at 50% 30%,#182320 0%,#101614 50%,#0b100f 100%);color:#f5f7f6;display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 32px) 24px calc(env(safe-area-inset-bottom) + 32px);text-align:center}
+.pwa-startup-brand{margin-top:auto;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:24px}
+.pwa-startup-logo{width:clamp(100px,24vw,180px);height:clamp(100px,24vw,180px);object-fit:contain;animation:startup-logo 900ms cubic-bezier(.2,.75,.25,1) both}
+.pwa-startup-name{font-size:clamp(26px,7vw,42px);font-weight:800;overflow-wrap:anywhere;animation:startup-name 900ms cubic-bezier(.2,.75,.25,1) both}
+.pwa-startup-message{margin-top:clamp(32px,7vh,70px);max-width:420px}
+.pwa-startup-message h2{font-size:clamp(20px,5vw,28px);font-weight:700}
+.pwa-startup-message p{color:#aeb9b4;font-size:14px;line-height:2;margin-top:18px}
+.pwa-startup-bottom{margin-top:auto;padding-top:48px;padding-bottom:7vh;width:min(100%,360px)}
+.pwa-startup-track{height:12px;border-radius:999px;background:#303834;overflow:hidden;direction:ltr}
+.pwa-startup-track>div{height:100%;border-radius:inherit;background:var(--startup-accent);box-shadow:0 0 18px var(--startup-accent);transition:width .25s ease}
+.pwa-startup-bottom p{font-size:13px;color:#c4d1ca;margin-top:18px}
+.pwa-startup-bottom button{margin-top:16px;min-height:44px;padding:8px 24px;border:1px solid #91a499;border-radius:12px;color:white}
+@keyframes startup-logo{from{transform:translateX(65vw);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes startup-name{from{transform:translateX(-65vw);opacity:0}to{transform:translateX(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){.pwa-startup-logo,.pwa-startup-name{animation:none}.pwa-startup-track>div{transition:none}}
