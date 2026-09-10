@@ -4,7 +4,7 @@ import {defaultSettings} from '@/domain/media'
 import {isStandalone} from '@/lib/pwa-display'
 import './pwa-startup.css'
 
-const fallbackLogo = `${import.meta.env.BASE_URL}logo-v061.png`
+const fallbackLogo = `${import.meta.env.BASE_URL}logo-v062.png`
 
 export function PwaStartup({children}: {children: ReactNode}) {
   const [installed] = useState(isStandalone)
