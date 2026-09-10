@@ -20,7 +20,7 @@ export function PwaStartup({children}: {children: ReactNode}) {
     const delay = (ms: number) => new Promise<void>(resolve => {timers.push(setTimeout(resolve, ms))})
     const timeout = new Promise<never>((_, reject) => {timers.push(setTimeout(() => reject(Error('timeout')), 12000))})
     async function prepare() {
-      const minimum = delay(window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1200)
+      const minimum = delay(window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 2400)
       const settings = await db.appSettings.get('business')
       if (cancelled) return
       setBusiness(settings ?? defaultSettings)
@@ -34,7 +34,7 @@ export function PwaStartup({children}: {children: ReactNode}) {
       if (cancelled) return
       timers.forEach(clearTimeout)
       setProgress(100)
-      await delay(220)
+      await delay(440)
       if (!cancelled) setFinished(true)
     }).catch(() => {if (!cancelled) {cancelled = true; setError(true); timers.forEach(clearTimeout)}})
     return () => {cancelled = true; timers.forEach(clearTimeout)}
