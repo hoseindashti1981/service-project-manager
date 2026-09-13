@@ -1,3 +1,4 @@
+import {MoneyInput} from '@/components/money-input'
 import {ServicePicker} from '@/components/service-picker'
 import { liveQuery } from 'dexie'
 import { activityRepository } from '@/db/repositories/activity-repository'
@@ -72,7 +73,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
       <ServicePicker services={services} value={serviceId} onChange={selectService} disabled={busy}/>
       <div><p className="text-sm">تاریخ خدمت (شمسی)</p><JalaliDatePicker label="تاریخ خدمت" value={date} onChange={setDate} disabled={busy} /></div><label>عنوان خدمت<input required value={title} onChange={(event) => setTitle(event.target.value)} className={field} /></label>
       <div className="grid grid-cols-2 gap-3"><label>مقدار<input required inputMode="decimal" value={quantity} onChange={(event) => setQuantity(normalizeDigits(event.target.value))} className={field} /></label><label>واحد<select value={unit} onChange={(event) => setUnit(event.target.value as Unit)} className={field}>{serviceUnits.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label></div>
-      <label>قیمت واحد (تومان)<input required inputMode="numeric" value={price} onChange={(event) => setPrice(normalizeDigits(event.target.value))} className={field} /></label>
+      <label>قیمت واحد (تومان)<MoneyInput required inputMode="numeric" value={price} onChange={(event) => setPrice(normalizeDigits(event.target.value))} className={field} /></label>
       <div className="flex gap-3"><button disabled={busy} className="rounded-lg bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">{editing ? 'ذخیره تغییرات خدمت' : 'افزودن به پروژه'}</button>{editing && <button type="button" disabled={busy} onClick={reset}>انصراف</button>}</div>
     </form>
     {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}

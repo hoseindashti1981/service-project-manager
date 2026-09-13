@@ -1,3 +1,4 @@
+import {MoneyInput} from '@/components/money-input'
 import { projectStatusLabels } from '@/domain/project/status'
 import { serviceRepository } from '@/db/repositories/service-repository'
 import { saveCatalogActivity } from '@/db/repositories/catalog-activity'
@@ -104,7 +105,7 @@ export function TodayActivitiesPage() {
         {selectedService && attachPricedService && <div className="space-y-2 rounded-xl bg-indigo-50 p-3"><p className="text-sm">این خدمت با قیمت پایه {formatMoney(selectedService.defaultUnitPrice ?? 0)} به پروژه اضافه می‌شود. قیمت و مقدار کل در صفحه پروژه قابل ویرایش است.</p><label className="block">مقدار کل خدمت در پروژه<input aria-label="مقدار کل خدمت در پروژه" required inputMode="decimal" value={plannedQuantity} onChange={(event) => setPlannedQuantity(normalizeDigits(event.target.value))} className={field} /></label></div>}
         <label className="block">عنوان فعالیت<input required value={title} onChange={(event) => setTitle(event.target.value)} className={field} /></label>
         <label className="block">مقدار انجام‌شده (اختیاری) {selectedUnit ? `(${serviceUnits.find((unit) => unit.value === selectedUnit)?.label})` : '(اختیاری)'}<input required={!!selectedService && attachPricedService} inputMode="decimal" value={quantity} onChange={(event) => setQuantity(normalizeDigits(event.target.value))} className={field} /></label>
-        <label className="block">مبلغ فعالیت به تومان (اختیاری)<input aria-label="مبلغ فعالیت به تومان (اختیاری)" inputMode="numeric" value={amount} onChange={event => setAmount(normalizeDigits(event.target.value))} className={field} /></label>
+        <label className="block">مبلغ فعالیت به تومان (اختیاری)<MoneyInput aria-label="مبلغ فعالیت به تومان (اختیاری)" inputMode="numeric" value={amount} onChange={event => setAmount(normalizeDigits(event.target.value))} className={field} /></label>
         <p className="text-xs text-slate-500">این صفحه گزارش کار روزانه است. مبلغ خالی محاسبه نمی‌شود؛ مبلغ اختیاری صرفاً در گزارش می‌ماند. کار خارج از قرارداد را در «کار اضافه» پروژه ثبت کنید.</p>
         <label className="block">یادداشت<input value={note} onChange={(event) => setNote(event.target.value)} className={field} /></label>
         <div className="flex gap-3"><button disabled={!selectedProject} className="rounded-xl bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">{saving ? 'در حال ذخیره…' : editing ? 'ذخیره تغییرات' : 'ثبت فعالیت'}</button><button type="button" onClick={reset}>انصراف</button></div>

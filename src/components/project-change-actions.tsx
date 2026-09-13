@@ -1,3 +1,4 @@
+import {MoneyInput} from '@/components/money-input'
 import {useEffect, useRef, useState, type FormEvent} from 'react'
 import type {ProjectChange} from '@/domain/project-change/types'
 import {projectChangeRepository} from '@/db/repositories/project-change-repository'
@@ -31,7 +32,7 @@ export function ProjectChangeActions({change}: {change: ProjectChange}) {
     <dialog ref={dialog} className="m-auto max-h-[90dvh] w-[92vw] max-w-lg overflow-y-auto rounded-xl p-4 backdrop:bg-black/40" onCancel={e => {if (busy) e.preventDefault(); else setDraft(null)}} onClose={() => setDraft(null)}>
       {draft && <form onSubmit={save} className="space-y-3"><h2 className="font-bold">ویرایش کار اضافه</h2>
         <label className="block">شرح کار اضافه<input name="title" required defaultValue={draft.title} className="w-full rounded border p-2" /></label>
-        <label className="block">مبلغ کار اضافه<input name="amount" required inputMode="numeric" defaultValue={draft.amount} className="w-full rounded border p-2" /></label>
+        <label className="block">مبلغ کار اضافه<MoneyInput name="amount" required inputMode="numeric" defaultValue={draft.amount} className="w-full rounded border p-2" /></label>
         <JalaliDatePicker label="تاریخ کار اضافه" value={draft.date} onChange={date => setDraft({...draft, date})} disabled={busy} />
         <label className="block">یادداشت کار اضافه<textarea name="note" defaultValue={draft.note} className="w-full rounded border p-2" /></label>
         {error && <p role="alert">{error}</p>}

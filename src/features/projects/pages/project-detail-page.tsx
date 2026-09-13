@@ -1,3 +1,4 @@
+import {MoneyInput} from '@/components/money-input'
 import { LocationField,type ProjectPoint } from '@/components/location-field'
 import { ProjectPhotos } from '../components/project-photos'
 
@@ -243,7 +244,7 @@ export function ProjectDetailPage() {
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه (تومان)</label>
-          <input type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+          <MoneyInput type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
         </div>
 
         <div className="space-y-3">

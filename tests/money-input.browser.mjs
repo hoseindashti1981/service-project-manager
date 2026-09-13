@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict'
+import {pathToFileURL} from 'node:url'
+const {chromium}=await import(pathToFileURL(process.env.SPM_PLAYWRIGHT_PATH).href)
+const browser=await chromium.launch({channel:'msedge'})
+try {
+ const page=await browser.newPage()
+ await page.goto('http://127.0.0.1:5173')
+ await page.evaluate(async()=>{const {db}=await import('/src/db/db.ts'),{backupFixture}=await import('/tests/backup-fixtures.mjs');for(const [name,rows] of Object.entries(backupFixture()))await db.table(name).bulkPut(rows)})
+ await page.goto('http://127.0.0.1:5173/projects/p1')
+ await page.getByRole('button',{name:'ویرایش کار اضافه',exact:true}).first().click()
+ const money=page.getByLabel('مبلغ کار اضافه',{exact:true})
+ await money.fill('۱۲٬۳۴۵٬۶۷۸')
+ assert.equal(await money.inputValue(),'12٬345٬678')
+ assert.equal(await money.evaluate(e=>new FormData(e.form).get('amount')),'12345678')
+ await money.fill('1234');await money.evaluate(e=>e.setSelectionRange(2,2));await money.press('Backspace')
+ assert.equal(await money.inputValue(),'1٬234')
+ await money.press('End');await money.press('Backspace')
+ assert.equal(await money.inputValue(),'123')
+ await money.fill('١٢٣٤٥٦٧')
+ await page.getByRole('button',{name:'ذخیره ویرایش کار اضافه',exact:true}).click()
+ await page.getByRole('dialog').waitFor({state:'hidden'})
+ assert.equal(await page.evaluate(async()=>(await (await import('/src/db/db.ts')).db.projectChanges.toArray())[0].amount),1234567)
+ const discount=page.getByLabel('تخفیف پروژه',{exact:true})
+ await discount.fill('۱٬۰۰۰');assert.equal(await discount.inputValue(),'1٬000')
+ await page.getByRole('button',{name:'ذخیره تخفیف',exact:true}).click()
+ await page.waitForFunction(async()=>(await (await import('/src/db/db.ts')).db.projects.get('p1')).discount===1000)
+ console.log('Grouped Persian/Arabic paste, deletion, raw FormData and controlled/uncontrolled persistence passed')
+}finally{await browser.close()}
