@@ -11,12 +11,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     base,
+    build: {rolldownOptions: {input: {main: path.resolve(import.meta.dirname, 'index.html'), location: path.resolve(import.meta.dirname, 'browser-location.html')}}},
     plugins: [
       react(),
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'], importScripts: ['reminder-notification.js'] },
+        workbox: { navigateFallbackDenylist: [/\/browser-location\.html$/], globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'], importScripts: ['reminder-notification.js'] },
         includeAssets: ['favicon-v061.png', 'apple-touch-icon-v061.png'],
         manifest: {
           id: base,

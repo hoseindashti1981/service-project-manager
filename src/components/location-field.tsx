@@ -1,3 +1,4 @@
+import {BrowserLocationButton} from './browser-location-button'
 import {LocationPermissionHelp} from './location-permission-help'
 import {CoordinateEntry} from './coordinate-entry'
 import {isStandalone} from '@/lib/pwa-display'
@@ -30,7 +31,7 @@ function PointMap({point,onPick}:{point?:ProjectPoint;onPick:(point:ProjectPoint
   return <div className="space-y-2"><div ref={element} aria-label="نقشه انتخاب محل پروژه" className="project-map relative z-0 h-72 w-full rounded-xl"/>{failed&&<p role="status" className="text-sm text-amber-800">تصویر نقشه دریافت نشد؛ اینترنت را بررسی کنید. دریافت موقعیت گوشی همچنان قابل امتحان است.</p>}<p className="text-xs">برای انتخاب، روی نقشه بزنید یا نشانگر را جابه‌جا کنید. نقشه با اینترنت و OpenStreetMap نمایش داده می‌شود.</p></div>
 }
 
-export function LocationField({point,onChange,disabled=false}:{point?:ProjectPoint;onChange:(point?:ProjectPoint)=>void;disabled?:boolean}) {
+export function LocationField({point,onChange,disabled=false,browserLocation=false}:{point?:ProjectPoint;onChange:(point?:ProjectPoint)=>void;disabled?:boolean;browserLocation?:boolean}) {
   const [open,setOpen]=useState(false),[tracking,setTracking]=useState(false),[accuracy,setAccuracy]=useState<number>(),[error,setError]=useState(''),[copyMessage,setCopyMessage]=useState('')
   const watch=useRef<number|null>(null),generation=useRef(0),wrapper=useRef<HTMLDivElement>(null)
   const clear=useCallback(()=>{generation.current++;if(watch.current!==null){navigator.geolocation.clearWatch(watch.current);watch.current=null}},[])
@@ -47,7 +48,7 @@ export function LocationField({point,onChange,disabled=false}:{point?:ProjectPoi
   }
   function pick(value:ProjectPoint){stop();setAccuracy(undefined);setError('');onChange(value)}
   return <div ref={wrapper} className="space-y-3 rounded-xl border border-sky-200 bg-sky-50/40 p-3">
-    <div className="flex flex-wrap gap-2"><button type="button" disabled={disabled} className="min-h-11 rounded-lg border bg-white px-3 text-sm" onClick={()=>setOpen(!open)}>{open?'بستن نقشه':'انتخاب از نقشه'}</button><button type="button" disabled={disabled} className="min-h-11 rounded-lg border bg-white px-3 text-sm" onClick={locate}>{tracking&&!disabled?'توقف موقعیت زنده':'دریافت موقعیت زنده گوشی'}</button></div>
+    <div className="flex flex-col gap-2"><button type="button" disabled={disabled} className="min-h-11 rounded-lg border bg-white px-3 text-sm" onClick={locate}>{tracking&&!disabled?'توقف موقعیت زنده':'دریافت موقعیت زنده گوشی'}</button>{browserLocation&&<BrowserLocationButton disabled={disabled} onPick={pick}/>}<button type="button" disabled={disabled} className="min-h-11 rounded-lg border bg-white px-3 text-sm" onClick={()=>setOpen(!open)}>{open?'بستن نقشه':'انتخاب از نقشه'}</button></div>
     {tracking&&!disabled&&<p role="status" className="text-sm">موقعیت زنده فعال است؛ پس از رسیدن به محل پروژه، آن را متوقف کنید.</p>}
     {point&&<div className="text-sm"><p>موقعیت انتخاب‌شده: <span dir="ltr">{point.latitude.toFixed(6)}, {point.longitude.toFixed(6)}</span></p>{accuracy!==undefined&&<p>دقت تقریبی: {accuracy.toLocaleString('fa-IR')} متر</p>}<a className="inline-block min-h-11 py-2 text-indigo-700" href={`https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}`} target="_blank" rel="noreferrer">بررسی موقعیت در نقشه</a><button type="button" disabled={disabled} className="min-h-11 px-3 text-rose-700" onClick={()=>{stop();setAccuracy(undefined);onChange(undefined)}}>حذف موقعیت</button></div>}
     {open&&!disabled&&<PointMap point={point} onPick={pick}/>}

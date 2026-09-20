@@ -148,7 +148,7 @@ export function ProjectFormPage() {
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
           />
         </div>
-        <LocationField point={point} onChange={setPoint} disabled={loading}/>
+        <LocationField browserLocation point={point} onChange={setPoint} disabled={loading}/>
 
         {/* نوع کار */}
         <div>
