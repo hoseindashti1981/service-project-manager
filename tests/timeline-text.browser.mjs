@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict'
+import {pathToFileURL} from 'node:url'
+const {chromium}=await import(pathToFileURL(process.env.SPM_PLAYWRIGHT_PATH).href)
+const browser=await chromium.launch({channel:'msedge'})
+try {
+ const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true})
+ await page.goto('http://127.0.0.1:5173')
+ await page.evaluate(async()=>{const {db}=await import('/src/db/db.ts'),{backupFixture}=await import('/tests/backup-fixtures.mjs'),{defaultSettings}=await import('/src/domain/media.ts');for(const [name,rows] of Object.entries(backupFixture()))await db.table(name).bulkPut(rows);await db.appSettings.put({...defaultSettings,defaultActivityRange:'today'})})
+ await page.goto('http://127.0.0.1:5173/projects/p1')
+ await page.getByRole('link',{name:'ثبت فعالیت: نصب چراغ',exact:true}).click()
+ const activity=page.locator('#activity-a1');await activity.waitFor()
+ assert.ok(page.url().endsWith('#activity-a1'))
+ await activity.getByRole('button',{name:'ویرایش',exact:true}).click()
+ const note=page.getByLabel('یادداشت',{exact:true});assert.equal(await note.evaluate(e=>e.tagName),'TEXTAREA')
+ await note.fill('توضیح بلند فارسی برای آزمایش پیمایش و ویرایش متن. '.repeat(100))
+ const result=await note.evaluate(e=>{e.setSelectionRange(10,20);e.scrollTop=100;const s=getComputedStyle(e);return {select:s.userSelect,touch:s.touchAction,scroll:e.scrollTop>0,selection:e.selectionEnd-e.selectionStart,font:parseFloat(s.fontSize)}})
+ assert.deepEqual(result,{select:'text',touch:'auto',scroll:true,selection:10,font:16})
+ await page.getByLabel('دلیل اصلاح یا ثبت دیرهنگام',{exact:true}).fill('آزمایش ویرایش از تاریخچه')
+ await page.getByRole('button',{name:'ذخیره تغییرات',exact:true}).click()
+ await page.getByText('فعالیت با موفقیت ذخیره شد.',{exact:true}).waitFor()
+ await page.goto('http://127.0.0.1:5173/projects/p1')
+ await page.getByRole('link',{name:'اصلاح فعالیت: نصب چراغ',exact:true}).waitFor()
+ await page.evaluate(async()=>{const {activityRepository}=await import('/src/db/repositories/activity-repository.ts');await activityRepository.delete('a1','حذف آزمایشی')})
+ await page.waitForFunction(()=>!Array.from(document.querySelectorAll('a')).some(a=>a.hash==='#activity-a1'))
+ assert.equal(await page.getByRole('link',{name:/فعالیت: نصب چراغ/}).count(),0)
+ console.log('Timeline opens old activity despite today filter; editing, long-text selection/scroll and deleted-entry links checked.')
+}finally{await browser.close()}

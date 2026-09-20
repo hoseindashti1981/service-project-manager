@@ -49,6 +49,21 @@ textarea {
   [data-app-shell] [aria-label="وضعیت پروژه‌ها"] > a { background: #fff !important; }
 }
 
+input:not([type]), input[type="text"], input[type="search"], textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+  touch-action: auto;
+}
+textarea {
+  min-height: 6rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  resize: vertical;
+}
+
 [data-app-shell] .bg-indigo-600, [data-app-shell] .bg-indigo-700 { background-color: var(--brand-color); }
 @media print {
   @page { size: A4; margin: 12mm; }
