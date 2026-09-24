@@ -89,14 +89,16 @@ export const projectRepository = {
 
   /** ویرایش پروژه */
   async update(id: ID, input: UpdateProjectInput): Promise<Project> {
-    return db.transaction('rw', [db.projects, db.projectActivities,db.projectChanges,db.payments,db.invoices,db.quotations], async () => {
+    return db.transaction('rw', [db.projects, db.customers,db.projectActivities,db.projectChanges,db.payments,db.invoices,db.quotations], async () => {
     const existing = await db.projects.get(id)
     if (!existing) {
       throw new Error('پروژه یافت نشد')
     }
 
     if (input.status !== undefined && input.status !== existing.status) throw new Error('برای تغییر وضعیت از بخش گردش‌کار پروژه استفاده کنید.')
-    if(input.customerId && input.customerId!==existing.customerId){const linked=await Promise.all([db.payments,db.invoices,db.quotations].map(table=>table.where('projectId').equals(id).count()));if(linked.some(Boolean))throw Error('پروژه دارای سابقه مالی است؛ مشتری آن قابل تغییر نیست.')}
+    const customerChanged = !!input.customerId && input.customerId !== existing.customerId
+    const customer = customerChanged ? await db.customers.get(input.customerId!) : undefined
+    if (customerChanged && !customer) throw new Error('مشتری یافت نشد')
     const updated: Project = {
       ...existing,
       ...input,
@@ -121,6 +123,20 @@ export const projectRepository = {
     }
     validateWorkflowChronology(updated)
     await db.projects.put(updated)
+    if (customerChanged && customer) {
+      const [invoices, quotations] = await Promise.all([
+        db.invoices.where('projectId').equals(id).toArray(),
+        db.quotations.where('projectId').equals(id).toArray(),
+      ])
+      const invoiceIds = new Set(invoices.map((invoice) => invoice.id))
+      const payments = await db.payments.filter((payment) => payment.projectId === id || (!!payment.invoiceId && invoiceIds.has(payment.invoiceId))).toArray()
+      const customerSnapshot = { name: customer.name, mobile: customer.mobile }
+      await Promise.all([
+        db.invoices.bulkPut(invoices.map((invoice) => ({ ...invoice, customerId: customer.id, customerSnapshot, updatedAt: updated.updatedAt }))),
+        db.quotations.bulkPut(quotations.map((quotation) => ({ ...quotation, customerId: customer.id, customerSnapshot, updatedAt: updated.updatedAt }))),
+        db.payments.bulkPut(payments.map((payment) => ({ ...payment, customerId: customer.id, updatedAt: updated.updatedAt }))),
+      ])
+    }
     return updated
     })
   },

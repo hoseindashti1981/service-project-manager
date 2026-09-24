@@ -64,6 +64,17 @@ textarea {
   resize: vertical;
 }
 
+@keyframes activity-target-flash {
+  0%, 100% { background-color: #fff; border-color: #dce4ef; box-shadow: 0 4px 18px #50658c08; }
+  20%, 60% { background-color: #fef3c7; border-color: #f59e0b; box-shadow: 0 0 0 4px #fbbf2440; }
+}
+.activity-target { scroll-margin-top: 6rem; }
+.activity-target-flash { animation: activity-target-flash 1.6s ease-in-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-target-flash { animation-duration: .6s; }
+}
+
 [data-app-shell] .bg-indigo-600, [data-app-shell] .bg-indigo-700 { background-color: var(--brand-color); }
 @media print {
   @page { size: A4; margin: 12mm; }
