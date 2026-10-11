@@ -7,6 +7,13 @@ function generateId(): string {
   return crypto.randomUUID()
 }
 
+async function syncPlanningEstimate(projectId: ID): Promise<void> {
+  const project = await db.projects.get(projectId)
+  if (!project || project.pricingMode !== 'itemized' || !['draft','planned'].includes(project.status)) return
+  const total = (await db.projectItems.where('projectId').equals(projectId).toArray()).reduce((sum,item)=>sum+item.totalPrice,0)
+  await db.projects.update(projectId,{initialEstimateAmount:total,updatedAt:Date.now()})
+}
+
 export const projectItemRepository = {
   async getByProjectId(projectId: ID): Promise<ProjectItem[]> {
     return db.projectItems
@@ -41,7 +48,7 @@ export const projectItemRepository = {
       updatedAt: now,
     }
 
-    await db.projectItems.add(item)
+    await db.transaction('rw',[db.projectItems,db.projects],async()=>{await db.projectItems.add(item);await syncPlanningEstimate(item.projectId)})
     return item
   },
 
@@ -63,14 +70,17 @@ export const projectItemRepository = {
       updatedAt: Date.now(),
     }
 
-    await db.projectItems.put(updated)
+    await db.transaction('rw',[db.projectItems,db.projects],async()=>{await db.projectItems.put(updated);await syncPlanningEstimate(updated.projectId)})
     return updated
   },
 
   async delete(id: ID): Promise<void> {
-    await db.transaction('rw', db.projectItems, db.projectActivities, async () => {
+    await db.transaction('rw', [db.projectItems, db.projectActivities,db.projects], async () => {
+      const item = await db.projectItems.get(id)
+      if (!item) return
       if (await db.projectActivities.where('projectItemId').equals(id).count()) throw new Error('این خدمت فعالیت ثبت‌شده دارد؛ ابتدا فعالیت‌های مرتبط را حذف یا منتقل کنید.')
       await db.projectItems.delete(id)
+      await syncPlanningEstimate(item.projectId)
     })
   },
 }

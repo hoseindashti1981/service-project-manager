@@ -21,6 +21,7 @@ try {
   const { activityRepository } = await import('/src/db/repositories/activity-repository.ts')
   const { financeRepository } = await import('/src/db/repositories/finance-repository.ts')
   const { backupRepository } = await import('/src/db/repositories/backup-repository.ts')
+  const { toISODate } = await import('/src/lib/dates.ts')
   const ensure = (value, message) => { if(!value) throw new Error(message) }
   const rejects = async (call, message) => { let rejected=false; try { await call() } catch { rejected=true } ensure(rejected,message) }
   const customerId = crypto.randomUUID()
@@ -80,9 +81,10 @@ try {
   const legacyId=crypto.randomUUID()
   await db.projects.add({ id:legacyId, customerId, title:'فعال قدیمی آزمایشی', status:'active', startDate:'2025-01-01', createdAt:Date.now(), updatedAt:Date.now() })
   await rejects(() => activityRepository.create({ ...input, projectId:legacyId }), 'unreviewed legacy executed')
-  let cancelled = await projectRepository.create({ title:'پروژه لغو آزمایشی', customerId, status:'draft', startDate:'2025-01-01', plannedEndDate:'2026-09-05' })
+  const today=toISODate()
+  let cancelled = await projectRepository.create({ title:'پروژه لغو آزمایشی', customerId, status:'draft', startDate:'2025-01-01', plannedEndDate:today })
   cancelled = await changeProjectStatus(cancelled.id, { to:'cancelled', expectedStatus:'draft', effectiveDate:'2025-01-02', reason:'عدم توافق' })
-  await db.reminders.add({ id:crypto.randomUUID(), title:'پیگیری مالی لغو', projectId:cancelled.id, dueDate:'2026-09-05', status:'open', createdAt:Date.now(), updatedAt:Date.now() })
+  await db.reminders.add({ id:crypto.randomUUID(), title:'پیگیری مالی لغو', projectId:cancelled.id, dueDate:today, status:'open', createdAt:Date.now(), updatedAt:Date.now() })
   return { projectId:project.id, legacyId, cancelledId:cancelled.id }
  })
  console.log('Lifecycle, atomic consent, historical work, audit snapshots, financial independence and legacy protection pass')

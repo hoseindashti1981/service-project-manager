@@ -31,6 +31,10 @@ export async function changeProjectStatus(id: string, input: StatusChangeInput):
       if (!updated.executionStartDate) updated.executionStartDate = input.effectiveDate
       if (['completed', 'delivered', 'cancelled'].includes(project.status)) { updated.actualEndDate = undefined; updated.deliveryDate = undefined }
       if (!['paused', 'completed', 'delivered', 'cancelled'].includes(project.status) && activities.some((activity) => activity.date < input.effectiveDate)) throw new Error('شروع اجرا باید در تاریخ اولین فعالیت یا قبل از آن باشد.')
+      if (project.pricingMode === 'itemized' && project.initialEstimateAmount === undefined) {
+        const items = await db.projectItems.where('projectId').equals(id).toArray()
+        updated.initialEstimateAmount = items.reduce((sum, item) => sum + item.totalPrice, 0)
+      }
     }
     if (input.to === 'completed') updated.actualEndDate = input.effectiveDate
     if (input.to === 'delivered') updated.deliveryDate = input.effectiveDate

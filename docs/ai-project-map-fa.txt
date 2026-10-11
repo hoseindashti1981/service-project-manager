@@ -1,7 +1,7 @@
 نقشه فنی و روابط اپلیکیشن لاین‌یار برای AI
 Service Project Manager — AI Project Map
 
-آخرین به‌روزرسانی سند: ۱۴۰۵/۰۶/۱۸ (2026-09-09)؛ نسخه 0.6.0، شامل تغییر نوار پیشرفت داشبورد
+آخرین به‌روزرسانی سند: ۱۴۰۵/۰۷/۱۹ (2026-10-11)؛ نسخه 0.7.0، شامل قیمت‌گذاری خدماتی و دامنه مالی وضعیت‌ها
 وضعیت سند: مرجع زنده؛ باید همراه تغییرات کد به‌روزرسانی شود.
 
 اصلاحات موبایل و یادآوری:
@@ -206,7 +206,9 @@ src/features/customers
 • title
 • address اختیاری
 • workType اختیاری
-• contractAmount اختیاری؛ مبلغ توافق اولیه
+• contractAmount اختیاری؛ مبلغ توافق اولیه در روش fixed
+• pricingMode اختیاری برای سازگاری با داده قدیمی: fixed | itemized؛ نبودن آن معادل fixed است
+• initialEstimateAmount اختیاری؛ تصویر اولیه برآورد و خارج از محاسبه جاری
 • startDate؛ تاریخ پروژه
 • plannedEndDate؛ موعد برنامه‌ریزی‌شده
 • agreementDate؛ تاریخ توافق
@@ -218,7 +220,7 @@ src/features/customers
 • statusHistory
 • activityAudit
 
-مبلغ قرارداد با جمع خدمات پروژه یکی نیست. ProjectItemها جزئیات برآورد و پیشرفت‌اند و نباید contractAmount را خودکار تغییر دهند.
+در pricingMode=fixed، مبلغ قرارداد مستقل از جمع خدمات پروژه است. در pricingMode=itemized، جمع زنده totalPrice خدمات پروژه منبع مبلغ پایه حساب است و contractAmount در محاسبه استفاده نمی‌شود. initialEstimateAmount فقط برای مقایسه با برآورد اولیه است و طلب جاری را تغییر نمی‌دهد.
 
 فایل‌های مرجع:
 src/domain/project/types.ts
@@ -372,11 +374,12 @@ Payment:
 جمع هر line برابر quantity × unitPrice است. مبالغ تومان و عدد صحیح امن و نامنفی‌اند.
 
 سیاست نهایی مالی — مدل A:
-طلب پروژه = contractAmount + مجموع projectChanges.amount − project.discount.
+طلب پروژه = مبلغ پایه روش قیمت‌گذاری + مجموع projectChanges.amount − project.discount.
+در fixed مبلغ پایه contractAmount است. در itemized مبلغ پایه جمع زنده ProjectItem.totalPrice است؛ اصلاح مقدار یا قیمت خدمت بلافاصله حساب را اصلاح می‌کند و کار اضافه فقط برای خارج از دامنه توافق است.
 مانده = طلب − مجموع payments.amount مرتبط. مثبت بدهکار، صفر تسویه، منفی بستانکار.
-فاکتورِ دارای projectId در هیچ وضعیت، طلب دوباره ایجاد نمی‌کند. قرارداد و کار اضافه و تخفیف، حتی پیش از صدور فاکتور منبع حساب پروژه‌اند. هیچ وضعیت پروژه‌ای به‌تنهایی بدهی را حذف نمی‌کند.
+فاکتورِ دارای projectId در هیچ وضعیت، طلب دوباره ایجاد نمی‌کند. مبلغ پایه، کار اضافه و تخفیف منبع حساب پروژه‌اند. فقط وضعیت‌های in_progress، paused، completed و delivered طلب جاری ایجاد می‌کنند. draft، planned، active قدیمی و cancelled از طلب خارج‌اند؛ پرداخت‌های ثبت‌شده حذف نمی‌شوند و می‌توانند بستانکاری نشان دهند.
 سند مستقل بدون projectId، فقط در وضعیت issued یا paid طلب جدا به حساب مشتری اضافه می‌کند؛ draft/void و تمام quotations طلب نیستند. این استثنا صریح برای اسناد مستقل است، نه تغییر منبع طلب پروژه.
-ProjectItem قیمت‌دار، مبلغ یادداشتی فعالیت، هزینه و مصالح، طلب خودکار ایجاد نمی‌کنند.
+ProjectItem قیمت‌دار فقط در pricingMode=itemized طلب پایه ایجاد می‌کند. مبلغ یادداشتی فعالیت، هزینه و مصالح، طلب خودکار ایجاد نمی‌کنند.
 منبع محاسبه کل حساب: src/domain/finance/account.ts. بارگذاری مشترک: src/db/repositories/account-repository.ts. readAccount در پروژه/مشتری/مالی/گزارش‌ها استفاده می‌شود. داشبورد با readDailyAccount فقط گردش مالی تاریخ امروز را نشان می‌دهد.
 پرداخت قدیمیِ فاقد projectId از invoiceId معتبر همان مشتری به پروژه نسبت داده می‌شود؛ فقط یک‌بار کسر می‌شود. ریز دریافتی و حساب پروژه این نسبت‌دهی را نشان می‌دهند.
 مبالغ نمایش‌داده‌شده با برچسب دریافت، بدهکار یا بستانکار هستند؛ عدد منفی بی‌عنوان حذف شده است.
@@ -665,6 +668,8 @@ ProjectNavigation offers a direct Apple Maps/Google Maps/Neshan picker and coord
 Canonical published icon is public/pwa-icon.svg, favicon.svg matches it; PNG 192/512 and Apple 180 assets are versioned v050. Local business.favicon changes browser favicon MIME and source, not GitHub or installed manifest icons.
 
 نسخه 0.6.0: dashboardProjectOrder اختیاری در appSettings.business، همراه اعتبارسنجی و بکاپ، فقط ترتیب لیست داشبورد را تعیین می‌کند. payment-mutations.ts منبع مشترک ایجاد/ویرایش/حذف تراکنشی پرداخت و تطبیق وضعیت فاکتور است؛ ویرایش از expectedUpdatedAt برای جلوگیری از بازنویسی هم‌زمان استفاده می‌کند. ServicePicker کل کاتالوگ را با جستجو و اسکرول نمایش می‌دهد. Web Push کلاینت در src/lib/web-push.ts و رویدادهای Worker در public/reminder-notification.js قرار دارند؛ تنظیمات و کلیدها و آزمون iOS در docs/web-push.md شرح داده شده‌اند. اشتراک localStorage از بکاپ کسب‌وکار جداست؛ کلید خصوصی فقط در فایل نادیده‌گرفته‌شده .env.vapid.local می‌ماند. نشان از scheme مقصد پشتیبانی می‌کند و لینک وب حفظ شده است.
+
+نسخه 0.7.0: Project.pricingMode منبع مبلغ پایه را بین contractAmount و جمع زنده ProjectItem.totalPrice انتخاب می‌کند. Project.initialEstimateAmount فقط snapshot مقایسه‌ای است؛ در draft/planned با ویرایش خدمات هماهنگ و هنگام اولین ورود به in_progress ثبت می‌شود. دامنه مطالبات پروژه محدود به in_progress/paused/completed/delivered است. حساب کل، مشتری، پروژه، گزارش و خلاصه روزانه از همین قاعده و مجموعه projectItems استفاده می‌کنند. draft/planned/active/cancelled طلب جاری ندارند اما پرداخت‌هایشان حفظ می‌شود. فاکتور پروژه snapshot سند است و طلب را دوباره اضافه نمی‌کند. بکاپ نسخه 3 فیلدهای اختیاری جدید را بدون تغییر شماره فرمت اعتبارسنجی می‌کند و داده قدیمی بدون pricingMode را fixed می‌خواند.
 
 
 نوار پیشرفت داشبورد (پس از نسخه 0.6.0، بدون تغییر شماره package):

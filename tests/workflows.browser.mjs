@@ -90,8 +90,8 @@ try {
   await page.getByRole('button', { name: button, exact: true }).click()
   await page.locator('select[name="customerId"]').selectOption(fixture.customer.id)
   await setDate('تاریخ سند', 1403, 12, 30)
-  if (table === 'payments') await page.locator('input[name="amount"]').fill('100')
-  else { await page.locator('input[name="description"]').fill('خدمت آزمایشی'); await page.locator('input[name="unitPrice"]').fill('100') }
+  if (table === 'payments') await page.getByLabel('مبلغ پرداخت', { exact: true }).fill('100')
+  else { await page.locator('input[name="description"]').fill('خدمت آزمایشی'); await page.getByLabel('قیمت واحد (تومان)', { exact: true }).fill('100') }
   await page.getByRole('button', { name: table==='payments'?'ذخیره':'ذخیره و پیش‌نمایش', exact: true }).click()
   await page.locator('form').waitFor({ state: 'hidden' })
   assert.equal(await page.evaluate(async (table) => (await (await import('/src/db/db.ts')).db.table(table).toArray())[0].date, table), '2025-03-20')
@@ -104,8 +104,8 @@ try {
   await page.getByRole('button', { name: button, exact: true }).click()
   const financial = page.locator('form').filter({ has: page.locator('input[name="title"]') })
   await financial.locator('input[name="title"]').fill(`آزمون ${button}`)
-  if(table === 'materials') { await financial.locator('input[name="quantity"]').fill('2'); await financial.locator('input[name="cost"]').fill('100') }
-  else await financial.locator('input[name="amount"]').fill('100')
+  if(table === 'materials') { await financial.locator('input[name="quantity"]').fill('2'); await financial.locator('input[placeholder="هزینه پیمانکار"]').fill('100') }
+  else await financial.locator('input[placeholder="مبلغ تومان"]').fill('100')
   await setDate('تاریخ', 1403, 12, 30)
   await financial.getByRole('button', { name: 'ذخیره', exact: true }).click()
   await financial.waitFor({ state: 'hidden' })

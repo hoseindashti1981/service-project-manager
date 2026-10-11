@@ -11,6 +11,8 @@ export type ProjectStatus =
   | 'delivered'
   | 'cancelled'
 
+export type ProjectPricingMode = 'fixed' | 'itemized'
+
 export interface Project {
   id: ID
   customerId: ID
@@ -21,6 +23,10 @@ export interface Project {
   workType?: string
   /** مبلغ توافق اولیه؛ کارهای اضافه جداگانه ثبت می‌شوند. */
   contractAmount?: Money
+  /** در حالت خدماتی، جمع زنده خدمات پروژه مبنای حساب است. */
+  pricingMode?: ProjectPricingMode
+  /** تصویر اولیه برآورد برای مقایسه؛ در محاسبات جاری استفاده نمی‌شود. */
+  initialEstimateAmount?: Money
   discount?: Money
   agreementDate?: string
   executionStartDate?: string

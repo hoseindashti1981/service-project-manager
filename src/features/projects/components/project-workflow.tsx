@@ -40,6 +40,6 @@ export function ProjectWorkflow({ project, onChange }: { project: Project; onCha
       {next && <><div><p className="mb-1 text-sm">{next === 'in_progress' ? 'تاریخ شروع یا ادامه اجرا' : next === 'completed' ? 'تاریخ پایان اجرا' : next === 'delivered' ? 'تاریخ تحویل' : 'تاریخ مؤثر تغییر وضعیت'} (شمسی)</p><JalaliDatePicker label="تاریخ تغییر وضعیت" value={date} onChange={setDate} /></div><label className="block text-sm">{reasonRequired ? 'دلیل تغییر (الزامی)' : 'توضیح تغییر (اختیاری)'}<textarea aria-label="دلیل تغییر وضعیت" required={reasonRequired} value={reason} onChange={(event) => setReason(event.target.value)} className="mt-1 w-full rounded-xl border p-2.5" /></label>{next === 'completed' && progress.unfinished && <p className="text-sm text-amber-800">مقدار برخی خدمات باقی مانده است؛ برای تکمیل پروژه دلیل وارد کنید.</p>}<button className="rounded-xl bg-indigo-600 px-4 py-2.5 text-white">{busy ? 'در حال ذخیره…' : 'تأیید تغییر وضعیت'}</button></>}
     </fieldset></form>
     {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
-    <p className="text-xs text-slate-500">تغییر وضعیت، مانده حساب و اسناد مالی را تغییر نمی‌دهد. بازگشایی، تاریخ پایان و تحویل دوره قبلی را در تاریخچه نگه می‌دارد.</p>
+    <p className="text-xs text-slate-500">پروژه در جریان، متوقف، تکمیل‌شده و تحویل‌شده در مطالبات مالی محاسبه می‌شود. پیش‌نویس و برنامه‌ریزی‌شده هنوز طلب جاری نیستند.</p>
   </section>
 }

@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { projectRepository } from '@/db/repositories/project-repository'
 import { customerRepository } from '@/db/repositories/customer-repository'
-import type { Project } from '@/domain/project/types'
+import type { Project,ProjectPricingMode } from '@/domain/project/types'
 import type { Customer } from '@/domain/customer/types'
 import { isNonEmpty } from '@/lib/validation'
 import { formatDateFa } from '@/lib/dates'
@@ -35,6 +35,7 @@ export function ProjectDetailPage() {
   const [point,setPoint] = useState<ProjectPoint>()
   const [workType, setWorkType] = useState('')
   const [contractAmount, setContractAmount] = useState('')
+  const [pricingMode, setPricingMode] = useState<ProjectPricingMode>('fixed')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -69,6 +70,7 @@ export function ProjectDetailPage() {
         setPoint(proj.latitude!==undefined&&proj.longitude!==undefined?{latitude:proj.latitude,longitude:proj.longitude}:undefined)
         setWorkType(proj.workType || '')
         setContractAmount(String(proj.contractAmount || ''))
+        setPricingMode(proj.pricingMode ?? 'fixed')
         setDescription(proj.description || '')
       } catch (err) {
         console.error(err)
@@ -111,6 +113,7 @@ export function ProjectDetailPage() {
         latitude: point?.latitude, longitude: point?.longitude,
         workType: workType.trim() || undefined,
         contractAmount: Number(contractAmount) || 0,
+        pricingMode,
         description: description.trim() || undefined,
       })
       setProject(updated)
@@ -242,10 +245,15 @@ export function ProjectDetailPage() {
           />
         </div>
 
-        <div>
+        <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3"><legend className="px-1 text-sm font-medium">روش قیمت‌گذاری پروژه</legend>
+          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='fixed'} onChange={()=>setPricingMode('fixed')}/>مبلغ ثابت توافقی</label>
+          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='itemized'} onChange={()=>setPricingMode('itemized')}/>براساس جمع خدمات پروژه</label>
+          <p className="text-xs text-slate-500">تغییر روش پس از ذخیره، حساب پروژه را با منبع انتخاب‌شده محاسبه می‌کند.</p>
+        </fieldset>
+        {pricingMode==='fixed'&&<div>
           <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه (تومان)</label>
           <MoneyInput type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
-        </div>
+        </div>}
 
         <div className="space-y-3">
           <div><span className="mb-1 block text-sm font-medium">تاریخ پروژه (شمسی)</span><JalaliDatePicker label="تاریخ پروژه" value={startDate} onChange={setStartDate} /></div>

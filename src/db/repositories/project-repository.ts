@@ -3,6 +3,7 @@ import { projectDates, statusHistory, validateProjectDates, validateWorkflowChro
 import { newProjectStatuses } from '@/domain/project/status'
 import { db } from '@/db/db'
 import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '@/domain/project/types'
+import { projectBaseAmount } from '@/domain/finance/account'
 import type { ID } from '@/types'
 
 function generateId(): string {
@@ -55,7 +56,7 @@ export const projectRepository = {
   /** ایجاد پروژه جدید */
   async create(input: CreateProjectInput): Promise<Project> {
     validateAmounts(input)
-    if((input.discount??0)>(input.contractAmount??0))throw Error('تخفیف بیش از مبلغ قرارداد است.')
+    if((input.discount??0)>(input.pricingMode==='itemized'?0:(input.contractAmount??0)))throw Error('تخفیف بیش از مبلغ پایه پروژه است.')
     if (!newProjectStatuses.some((option) => option.value === input.status)) throw new Error('برای پروژه جدید وضعیت پیش‌نویس، برنامه‌ریزی‌شده یا در جریان انتخاب کنید.')
     validateProjectDates(input, true)
     const now = Date.now()
@@ -69,6 +70,8 @@ export const projectRepository = {
       longitude: input.longitude,
       workType: input.workType?.trim(),
       contractAmount: input.contractAmount ?? 0,
+      pricingMode: input.pricingMode ?? 'fixed',
+      initialEstimateAmount: input.pricingMode === 'itemized' ? input.initialEstimateAmount : (input.initialEstimateAmount ?? input.contractAmount ?? 0),
       discount: input.discount??0,
       agreementDate: input.agreementDate,
       executionStartDate: input.executionStartDate,
@@ -89,7 +92,7 @@ export const projectRepository = {
 
   /** ویرایش پروژه */
   async update(id: ID, input: UpdateProjectInput): Promise<Project> {
-    return db.transaction('rw', [db.projects, db.customers,db.projectActivities,db.projectChanges,db.payments,db.invoices,db.quotations], async () => {
+    return db.transaction('rw', [db.projects, db.customers,db.projectItems,db.projectActivities,db.projectChanges,db.payments,db.invoices,db.quotations], async () => {
     const existing = await db.projects.get(id)
     if (!existing) {
       throw new Error('پروژه یافت نشد')
@@ -112,8 +115,10 @@ export const projectRepository = {
     }
 
     validateAmounts(updated)
-    const extras=(await db.projectChanges.where('projectId').equals(id).toArray()).reduce((s,c)=>s+c.amount,0)
-    if((updated.discount??0)>(updated.contractAmount??0)+extras)throw Error('تخفیف بیش از مبلغ قابل دریافت است.')
+    const [projectItems,projectChanges]=await Promise.all([db.projectItems.where('projectId').equals(id).toArray(),db.projectChanges.where('projectId').equals(id).toArray()])
+    const extras=projectChanges.reduce((s,c)=>s+c.amount,0)
+    if(updated.pricingMode==='itemized'&&existing.pricingMode!=='itemized'&&updated.initialEstimateAmount===undefined)updated.initialEstimateAmount=projectBaseAmount(updated,projectItems)
+    if((updated.discount??0)>projectBaseAmount(updated,projectItems)+extras)throw Error('تخفیف بیش از مبلغ پایه پروژه و کار اضافه است.')
     validateProjectDates(updated, !!existing.statusHistory?.length)
     if (JSON.stringify(projectDates(existing)) !== JSON.stringify(projectDates(updated))) {
       const activities = await db.projectActivities.where('projectId').equals(id).toArray()

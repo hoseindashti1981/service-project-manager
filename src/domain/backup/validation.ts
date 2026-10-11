@@ -41,6 +41,7 @@ function validateRow(table: BackupTable, row: Row, where: string) {
     case 'services': field(row,'defaultUnit',choice(units),where); field(row,'defaultUnitPrice',money,where,true); field(row,'isActive',value => typeof value === 'boolean',where); break
     case 'projects': {
       field(row,'discount',money,where,true)
+      field(row,'pricingMode',choice(['fixed','itemized']),where,true); field(row,'initialEstimateAmount',money,where,true)
       field(row,'customerId',id,where); field(row,'status',choice(statuses),where); field(row,'contractAmount',money,where,true)
       for (const key of ['address','workType']) field(row,key,text,where,true)
       for (const key of ['latitude','longitude']) field(row,key,number,where,true)
@@ -115,7 +116,10 @@ function relationshipWarnings(data: BackupRows): string[] {
     if (item && item.projectId !== row.projectId) throw new Error('ارتباط فعالیت و خدمت پروژه ناسازگار است.')
     const project = maps.projects.get(row.projectId)
     if(table==='photos'&&row.activityId!==undefined){const activity=maps.projectActivities.get(row.activityId);if(activity&&activity.projectId!==row.projectId)throw Error('عکس و فعالیت به پروژه‌های متفاوت متصل‌اند.')}
-    if(table==='projects'&&Number(row.discount??0)>Number(row.contractAmount??0)+data.projectChanges.filter(c=>c.projectId===row.id).reduce((s,c)=>s+Number(c.amount),0))throw Error('تخفیف پروژه از مبلغ قرارداد و کار اضافه بیشتر است.')
+    if(table==='projects'){
+      const baseAmount=row.pricingMode==='itemized'?data.projectItems.filter(item=>item.projectId===row.id).reduce((sum,item)=>sum+Number(item.totalPrice),0):Number(row.contractAmount??0)
+      if(Number(row.discount??0)>baseAmount+data.projectChanges.filter(c=>c.projectId===row.id).reduce((s,c)=>s+Number(c.amount),0))throw Error('تخفیف پروژه از مبلغ پایه و کار اضافه بیشتر است.')
+    }
     if (project && row.customerId && project.customerId !== row.customerId) warnings.add('بعضی اسناد مالی به مشتری متفاوت از مشتری پروژه متصل‌اند؛ پس از بازیابی بررسی شوند.')
   }
   return [...warnings]

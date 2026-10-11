@@ -14,6 +14,8 @@ import type { ProjectItem } from '@/domain/project-item/types'
 import type { Unit } from '@/types'
 import { normalizeDigits, serviceUnits, validateServicePrice } from '@/domain/service/helpers'
 import { formatMoney } from '@/lib/money'
+import { db } from '@/db/db'
+import type { Project } from '@/domain/project/types'
 
 export function ProjectServices({ projectId }: { projectId: string }) {
   const [open,setOpen]=useState(false)
@@ -22,6 +24,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
 
   const [services, setServices] = useState<Service[]>([])
   const [items, setItems] = useState<ProjectItem[]>([])
+  const [project,setProject]=useState<Project>()
   const [serviceId, setServiceId] = useState('')
   const [title, setTitle] = useState('')
   const [unit, setUnit] = useState<Unit>('piece')
@@ -31,6 +34,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   useEffect(() => { const subscription = liveQuery(() => activityRepository.getByProjectId(projectId)).subscribe({ next: setActivities, error: () => setError('بارگذاری پیشرفت ناموفق بود.') }); return () => subscription.unsubscribe() }, [projectId])
+  useEffect(()=>{const subscription=liveQuery(()=>db.projects.get(projectId)).subscribe(setProject);return()=>subscription.unsubscribe()},[projectId])
   const load = async () => {
     const [catalog, rows] = await Promise.all([serviceRepository.getActive(), projectItemRepository.getByProjectId(projectId)])
     setServices(catalog); setItems(rows)
@@ -65,10 +69,12 @@ export function ProjectServices({ projectId }: { projectId: string }) {
     finally { setBusy(false) }
   }
   const field = 'w-full rounded-lg border border-slate-300 p-2'
+  const total=items.reduce((sum,item)=>sum+item.totalPrice,0)
   return <section className="space-y-4 rounded-2xl border bg-white p-4">
     <button type="button" aria-expanded={open} className="min-h-11 font-bold w-full text-right" onClick={()=>setOpen(!open)}>خدمات پروژه و قیمت‌ها — {items.length.toLocaleString("fa-IR")} خدمت · {items.length ? Math.round(items.reduce((s,item)=>s+serviceProgress(item,activities).percent,0)/items.length) : 0}٪ میانگین پیشرفت</button>
     {open && <>
-    <p className="text-xs text-slate-500">قیمت هر ردیف مستقل از کاتالوگ ذخیره می‌شود. جمع خدمات، مبلغ توافق اولیه را تغییر نمی‌دهد.</p>
+    <p className="text-xs text-slate-500">{project?.pricingMode==='itemized'?'جمع زنده خدمات، مبلغ پایه حساب پروژه است و تغییر مقدار یا قیمت فوراً در مالی اعمال می‌شود.':'در روش مبلغ ثابت، خدمات برای شرح کار و پیشرفت‌اند و جمع آن‌ها مبلغ توافق را تغییر نمی‌دهد.'}</p>
+    {project?.pricingMode==='itemized'&&<div className="rounded-xl bg-amber-50 p-3 text-sm"><p>برآورد اولیه: {project.initialEstimateAmount===undefined?'ثبت نشده':formatMoney(project.initialEstimateAmount)}</p><button type="button" disabled={busy} className="mt-2 min-h-11 rounded-lg border border-amber-300 px-3" onClick={async()=>{if(project.initialEstimateAmount!==undefined&&!confirm('برآورد اولیه با جمع فعلی خدمات جایگزین شود؟'))return;setBusy(true);try{await db.projects.update(projectId,{initialEstimateAmount:total,updatedAt:Date.now()})}finally{setBusy(false)}}}>ثبت جمع فعلی به‌عنوان برآورد اولیه</button></div>}
     <form onSubmit={(event) => void submit(event)} className="grid gap-3">
       <ServicePicker services={services} value={serviceId} onChange={selectService} disabled={busy}/>
       <div><p className="text-sm">تاریخ خدمت (شمسی)</p><JalaliDatePicker label="تاریخ خدمت" value={date} onChange={setDate} disabled={busy} /></div><label>عنوان خدمت<input required value={title} onChange={(event) => setTitle(event.target.value)} className={field} /></label>
@@ -79,7 +85,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
     {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
     {items.length === 0 && <p className="text-sm text-slate-500">هنوز خدمتی برای پروژه ثبت نشده است.</p>}
     {items.map((item) => <article key={item.id} className="space-y-2 border-t pt-3"><b>{item.title}</b><p className="text-xs text-slate-500">{formatDateFa(item.date || item.createdAt)}</p><p className="text-sm">انجام‌شده: {serviceProgress(item, activities).completed.toLocaleString('fa-IR')} · باقی‌مانده: {serviceProgress(item, activities).remaining.toLocaleString('fa-IR')}</p><progress aria-label={`پیشرفت ${item.title}`} max={100} value={serviceProgress(item, activities).percent} className="w-full" /><p className="text-sm">{item.quantity.toLocaleString('fa-IR')} {serviceUnits.find((entry) => entry.value === item.unit)?.label} × {formatMoney(item.unitPrice)} = {formatMoney(item.totalPrice)}</p><div className="flex gap-4 text-sm"><button disabled={busy} onClick={() => { setDate(item.date || toISODate(new Date(item.createdAt))); setEditing(item.id); setServiceId(item.serviceId ?? ''); setTitle(item.title); setUnit(item.unit); setQuantity(String(item.quantity)); setPrice(String(item.unitPrice)); setError('') }}>ویرایش خدمت</button><button disabled={busy} onClick={() => void remove(item)} className="text-rose-600">حذف خدمت</button></div></article>)}
-    <p className="border-t pt-3 font-bold">جمع خدمات: {formatMoney(items.reduce((sum, item) => sum + item.totalPrice, 0))}</p>
+    <p className="border-t pt-3 font-bold">جمع خدمات: {formatMoney(total)}</p>
     </>}
   </section>
 }

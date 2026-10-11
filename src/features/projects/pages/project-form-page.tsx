@@ -8,7 +8,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { projectRepository } from '@/db/repositories/project-repository'
 import { customerRepository } from '@/db/repositories/customer-repository'
 import type { Customer } from '@/domain/customer/types'
-import type { ProjectStatus } from '@/domain/project/types'
+import type { ProjectPricingMode, ProjectStatus } from '@/domain/project/types'
 import { isNonEmpty } from '@/lib/validation'
 
 export function ProjectFormPage() {
@@ -25,6 +25,7 @@ export function ProjectFormPage() {
   const [point,setPoint] = useState<ProjectPoint>()
   const [workType, setWorkType] = useState('')
   const [contractAmount, setContractAmount] = useState('')
+  const [pricingMode, setPricingMode] = useState<ProjectPricingMode>('fixed')
   const [status, setStatus] = useState<ProjectStatus>('draft')
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -71,6 +72,7 @@ export function ProjectFormPage() {
         latitude: point?.latitude, longitude: point?.longitude,
         workType: workType.trim() || undefined,
         contractAmount: Number(contractAmount) || 0,
+        pricingMode,
         status,
         description: description.trim() || undefined,
       })
@@ -164,10 +166,15 @@ export function ProjectFormPage() {
           />
         </div>
 
-        <div>
+        <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3"><legend className="px-1 text-sm font-medium">روش قیمت‌گذاری پروژه</legend>
+          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='fixed'} onChange={()=>setPricingMode('fixed')}/>مبلغ ثابت توافقی</label>
+          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='itemized'} onChange={()=>setPricingMode('itemized')}/>براساس جمع خدمات پروژه</label>
+          <p className="text-xs text-slate-500">در روش خدماتی، مبلغ قابل دریافت با تغییر مقدار یا قیمت خدمات پروژه خودکار به‌روز می‌شود.</p>
+        </fieldset>
+        {pricingMode==='fixed'&&<div>
           <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه (تومان)</label>
           <MoneyInput type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰۰۰" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
-        </div>
+        </div>}
 
         <div className="space-y-3">
           <div><span className="mb-1 block text-sm font-medium">تاریخ پروژه (شمسی)</span><JalaliDatePicker label="تاریخ پروژه" value={startDate} onChange={setStartDate} /></div>
