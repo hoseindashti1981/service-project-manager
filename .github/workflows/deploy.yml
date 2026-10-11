@@ -36,6 +36,7 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /service-project-manager/
+          VITE_CLOUD_BACKUP_ENDPOINT: https://lineyar.ir/lineyar-backup-api
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

@@ -1,6 +1,7 @@
 import { db } from '@/db/db'
 import { backupTables, type BackupRows, type BackupData, type BackupPreview } from '@/domain/backup/types'
 import { createBackup, inspectBackup, parseBackup } from '@/domain/backup/validation'
+import { preserveLocalMedia, textOnlyRows } from '@/domain/backup/text-only'
 export type { BackupData } from '@/domain/backup/types'
 
 function ensureSupportedSchema() {
@@ -17,6 +18,11 @@ export const backupRepository = {
     const backup = await createBackup(data)
     await inspectBackup(backup)
     return backup
+  },
+  async exportTextOnly(): Promise<BackupData> {
+    ensureSupportedSchema()
+    const data = await db.transaction('r', backupTables.map(table => db.table(table)), snapshot)
+    return createBackup(textOnlyRows(data))
   },
   inspect: inspectBackup,
   async import(value: unknown): Promise<BackupPreview> {
@@ -41,5 +47,10 @@ export const backupRepository = {
     if (!recovery) return undefined
     const normalized=parseBackup({version:1,exportedAt:recovery.exportedAt,data:recovery.data})
     return createBackup(normalized.data,recovery.exportedAt)
+  },
+  async importTextOnly(value: unknown): Promise<BackupPreview> {
+    const incoming=await inspectBackup(value)
+    const current=await db.transaction('r',backupTables.map(table=>db.table(table)),snapshot)
+    return this.import(await createBackup(preserveLocalMedia(incoming.data,current),incoming.exportedAt))
   },
 }

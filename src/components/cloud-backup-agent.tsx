@@ -1,0 +1,4 @@
+import {useEffect} from 'react'
+import {cloudBackupEnabled,cloudBackupKey,recordCloudBackupError,uploadCloudBackup} from '@/lib/cloud-backup'
+
+export function CloudBackupAgent(){useEffect(()=>{if(!cloudBackupEnabled()||!cloudBackupKey())return;let running=false;const run=async()=>{if(running||!navigator.onLine||document.visibilityState==='hidden')return;running=true;try{await uploadCloudBackup()}catch(error){recordCloudBackupError(error)}finally{running=false}};const timer=window.setInterval(()=>void run(),60000),start=window.setTimeout(()=>void run(),5000);const wake=()=>void run();window.addEventListener('online',wake);document.addEventListener('visibilitychange',wake);return()=>{clearInterval(timer);clearTimeout(start);window.removeEventListener('online',wake);document.removeEventListener('visibilitychange',wake)}},[]);return null}

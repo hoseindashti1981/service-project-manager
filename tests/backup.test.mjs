@@ -3,6 +3,7 @@ import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import ts from 'typescript'
 import {createHash} from 'node:crypto'
+import {webcrypto} from 'node:crypto'
 import {backupFixture} from './backup-fixtures.mjs'
 function url(path,imports={}) {
  let {outputText}=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}})
@@ -10,6 +11,8 @@ function url(path,imports={}) {
  return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
 }
 const {parseBackup,createBackup,inspectBackup}=await import(url('../src/domain/backup/validation.ts',{'../project/dashboard-order':url('../src/domain/project/dashboard-order.ts'),'@/lib/dates':url('../src/lib/dates.ts'),'./types':url('../src/domain/backup/types.ts')}))
+const {textOnlyRows,preserveLocalMedia}=await import(url('../src/domain/backup/text-only.ts'))
+const {generateCloudKey,encryptBackup,decryptBackup}=await import(url('../src/domain/backup/cloud-crypto.ts'))
 const legacy=data=>({version:1,exportedAt:'2025-01-05T12:00:00.000Z',data})
 test('dashboard priorities survive backup and reject duplicate or unknown statuses',async()=>{
  const data=backupFixture();data.appSettings=[{id:'business',name:'test',phone:'',address:'',color:'#4f46e5',paymentInfo:'',createdAt:1,updatedAt:1,dashboardProjectOrder:['draft','paused','delivered','in_progress']}]
@@ -75,4 +78,21 @@ test('legacy orphan references are preserved with warnings instead of dropping r
 test('an empty full backup is valid and contains explicit counts for every table',async()=>{
  const data=Object.fromEntries(Object.keys(backupFixture()).map(key=>[key,[]]))
  const preview=await inspectBackup(await createBackup(data));assert.ok(Object.values(preview.counts).every(value=>value===0))
+})
+test('cloud backup removes every binary image while preserving business text',()=>{
+ const data=backupFixture()
+ data.photos=[{id:'photo',projectId:'p1',dataUrl:'data:image/png;base64,AAAA',thumbnail:'data:image/png;base64,AAAA'}]
+ data.appSettings=[{id:'business',name:'لاین یار',logo:'data:image/png;base64,AAAA',banner:'data:image/png;base64,BBBB',favicon:'data:image/png;base64,CCCC'}]
+ data.invoices[0].qrData='data:image/png;base64,DDDD';data.invoices[0].business={name:'لاین یار',logo:'data:image/png;base64,EEEE'}
+ const cloud=textOnlyRows(data)
+ assert.deepEqual(cloud.photos,[]);assert.equal(cloud.appSettings[0].name,'لاین یار');assert.equal(cloud.appSettings[0].logo,undefined)
+ assert.equal(cloud.invoices[0].qrData,undefined);assert.equal(cloud.invoices[0].business.logo,undefined)
+ const restored=preserveLocalMedia(cloud,data)
+ assert.deepEqual(restored.photos,data.photos);assert.equal(restored.appSettings[0].logo,data.appSettings[0].logo);assert.equal(restored.invoices[0].business.logo,data.invoices[0].business.logo)
+})
+test('cloud backup encryption roundtrips and rejects a different key',async()=>{
+ if(!globalThis.crypto)globalThis.crypto=webcrypto
+ const backup=await createBackup(backupFixture()),key=generateCloudKey(),encrypted=await encryptBackup(backup,key)
+ assert.deepEqual(await decryptBackup(encrypted,key),backup)
+ await assert.rejects(decryptBackup(encrypted,generateCloudKey()),/کد اتصال/)
 })
