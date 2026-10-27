@@ -117,8 +117,11 @@ function relationshipWarnings(data: BackupRows): string[] {
     const project = maps.projects.get(row.projectId)
     if(table==='photos'&&row.activityId!==undefined){const activity=maps.projectActivities.get(row.activityId);if(activity&&activity.projectId!==row.projectId)throw Error('عکس و فعالیت به پروژه‌های متفاوت متصل‌اند.')}
     if(table==='projects'){
-      const baseAmount=row.pricingMode==='itemized'?data.projectItems.filter(item=>item.projectId===row.id).reduce((sum,item)=>sum+Number(item.totalPrice),0):Number(row.contractAmount??0)
-      if(Number(row.discount??0)>baseAmount+data.projectChanges.filter(c=>c.projectId===row.id).reduce((s,c)=>s+Number(c.amount),0))throw Error('تخفیف پروژه از مبلغ پایه و کار اضافه بیشتر است.')
+      const projectItems=data.projectItems.filter(item=>item.projectId===row.id),itemTotal=projectItems.reduce((sum,item)=>sum+Number(item.totalPrice),0)
+      const activityAmounts=data.projectActivities.filter(activity=>activity.projectId===row.id).map(activity=>{if(Number(activity.amount)>0)return Number(activity.amount);const item=projectItems.find(candidate=>candidate.id===activity.projectItemId);return item&&Number(activity.quantity)>0&&Number(item.unitPrice)>0?Math.round(Number(activity.quantity)*Number(item.unitPrice)):0}).filter(amount=>amount>0)
+      const baseAmount=activityAmounts.length?activityAmounts.reduce((sum,amount)=>sum+amount,0):row.pricingMode==='itemized'?itemTotal:Number(row.contractAmount??0)
+      const maximumBase=Math.max(baseAmount,itemTotal,Number(row.contractAmount??0))
+      if(Number(row.discount??0)>maximumBase+data.projectChanges.filter(c=>c.projectId===row.id).reduce((s,c)=>s+Number(c.amount),0))throw Error('تخفیف پروژه از مبلغ پایه و کار اضافه بیشتر است.')
     }
     if (project && row.customerId && project.customerId !== row.customerId) warnings.add('بعضی اسناد مالی به مشتری متفاوت از مشتری پروژه متصل‌اند؛ پس از بازیابی بررسی شوند.')
   }

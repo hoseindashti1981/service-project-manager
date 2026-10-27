@@ -9,6 +9,7 @@ try{
  const sums=await page.evaluate(async()=>{
   const {db}=await import('/src/db/db.ts'),{backupFixture}=await import('/tests/backup-fixtures.mjs'),{readDailyAccount}=await import('/src/db/repositories/daily-account-repository.ts');const d=backupFixture()
   d.projects[0].latitude=35.6892;d.projects[0].longitude=51.389;d.projects[0].agreementDate='2026-09-07';d.projects[0].contractAmount=1000;d.projects[0].discount=100
+  d.projectActivities[0].projectItemId=undefined;d.projectActivities[0].quantity=undefined
   d.projectChanges[0].date='2026-09-07';d.projectChanges[0].amount=200;d.payments[0].date='2026-09-07';d.payments[0].amount=300
   d.invoices.push({...d.invoices[0],id:'standalone',projectId:undefined,quotationId:undefined,date:'2026-09-07',total:50,number:'extra',lines:[{id:'x',description:'test',quantity:1,unitPrice:50,total:50}]})
   for(const [name,rows] of Object.entries(d))await db.table(name).bulkPut(rows)

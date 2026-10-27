@@ -19,7 +19,7 @@ try{
  await page.goto(base)
  const result=await page.evaluate(async()=>{
   const {db}=await import('/src/db/db.ts'),{backupFixture}=await import('/tests/backup-fixtures.mjs'),{financeRepository:f}=await import('/src/db/repositories/finance-repository.ts'),{readAccount}=await import('/src/db/repositories/account-repository.ts'),{backupRepository:b}=await import('/src/db/repositories/backup-repository.ts'),{toISODate}=await import('/src/lib/dates.ts')
-  const data=backupFixture();data.projects[0].contractAmount=20000000;data.projects[0].discount=1000000;data.projectChanges[0].amount=3000000;data.payments[0].amount=10000000;data.reminders[0].dueDate=toISODate();data.projectActivities[0].date=toISODate()
+  const data=backupFixture();data.projects[0].contractAmount=20000000;data.projects[0].discount=1000000;data.projectChanges[0].amount=3000000;data.payments[0].amount=10000000;data.reminders[0].dueDate=toISODate();data.projectActivities[0].date=toISODate();data.projectActivities[0].projectItemId=undefined;data.projectActivities[0].quantity=undefined
   for(const [table,rows] of Object.entries(data))await db.table(table).bulkPut(rows)
   const before=await readAccount('p1')
   const doc=await f.createInvoice({customerId:'c1',projectId:'p1',date:toISODate(),status:'issued',discount:1000000,lines:[{id:'x',description:'قرارداد و کار اضافه',quantity:1,unitPrice:23000000,total:23000000}]})

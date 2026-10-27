@@ -8,7 +8,7 @@ export interface ProjectActivity {
   title: string           // عنوان فعالیت (مثلاً: ۸ متر نور خطی نصب شد)
   quantity?: number       // مقدار کار انجام‌شده
   unit?: string
-  /** Informational only; never changes contract or receivables. */
+  /** مبلغ قطعی این فعالیت؛ در صورت ثبت، بر محاسبه مقدار × قیمت خدمت اولویت دارد. */
   amount?: number
   note?: string
   createdAt: Timestamp

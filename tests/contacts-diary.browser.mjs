@@ -38,7 +38,7 @@ try {
  await page.getByLabel('عنوان فعالیت',{exact:true}).fill('یادداشت مبلغ اختیاری')
  await page.getByLabel('مبلغ فعالیت به تومان (اختیاری)',{exact:true}).fill('۲۵۰')
  await page.getByRole('button',{name:'ثبت فعالیت',exact:true}).click()
- await page.getByText('مبلغ یادداشت‌شده:',{exact:false}).waitFor()
+ await page.getByText('مبلغ قطعی فعالیت:',{exact:false}).waitFor()
  await page.reload()
  const backup=await page.evaluate(async()=>await (await import('/src/db/repositories/backup-repository.ts')).backupRepository.export())
  assert.equal(backup.data.projectActivities.find(a=>a.title==='یادداشت مبلغ اختیاری').amount,250)

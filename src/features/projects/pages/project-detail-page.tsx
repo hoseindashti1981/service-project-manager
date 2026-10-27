@@ -246,12 +246,12 @@ export function ProjectDetailPage() {
         </div>
 
         <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3"><legend className="px-1 text-sm font-medium">روش قیمت‌گذاری پروژه</legend>
-          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='fixed'} onChange={()=>setPricingMode('fixed')}/>مبلغ ثابت توافقی</label>
-          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='itemized'} onChange={()=>setPricingMode('itemized')}/>براساس جمع خدمات پروژه</label>
-          <p className="text-xs text-slate-500">تغییر روش پس از ذخیره، حساب پروژه را با منبع انتخاب‌شده محاسبه می‌کند.</p>
+          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='fixed'} onChange={()=>setPricingMode('fixed')}/>توافق اولیه تا شروع کارکرد واقعی</label>
+          <label className="flex gap-2 text-sm"><input type="radio" name="pricingMode" checked={pricingMode==='itemized'} onChange={()=>setPricingMode('itemized')}/>جمع خدمات تا شروع کارکرد واقعی</label>
+          <p className="text-xs text-slate-500">در هر دو روش، اولین فعالیت مبلغ‌دار منبع حساب را به جمع کارکرد واقعی تغییر می‌دهد.</p>
         </fieldset>
         {pricingMode==='fixed'&&<div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه (تومان)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">مبلغ توافق اولیه / برآورد موقت (تومان)</label>
           <MoneyInput type="number" min="0" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
         </div>}
 

@@ -22,6 +22,19 @@ test('itemized projects use the live service total and only financial statuses c
  for(const status of ['draft','planned','active','cancelled'])assert.equal(projectAccount({...itemized,status},[],[],items).receivable,0)
  assert.equal(projectAccount({...itemized,status:'cancelled'},[],[{projectId:'p',amount:2000}],items).balance,-2000)
 })
+test('priced activities replace the initial agreement and manual activity amounts override unit calculation',()=>{
+ const items=[{id:'item',projectId:'p',unitPrice:150000,totalPrice:15000000}]
+ assert.equal(projectAccount(project,changes,[],items,[]).receivable,22000000)
+ const measured=[{projectId:'p',projectItemId:'item',quantity:106}]
+ const account=projectAccount(project,changes,[],items,measured)
+ assert.equal(account.source,'activities')
+ assert.equal(account.contract,15900000)
+ assert.equal(account.receivable,17900000)
+ const corrected=projectAccount(project,changes,[],items,[{...measured[0],amount:17000000}])
+ assert.equal(corrected.contract,17000000)
+ assert.equal(corrected.receivable,19000000)
+ assert.equal(projectAccount(project,changes,[],items,[]).source,'contract')
+})
 test('project invoices never duplicate debt; only standalone issued/paid invoices contribute',()=>{
  const invoices=['draft','issued','paid','void'].flatMap(status=>[{projectId:'p',customerId:'c',total:22000000,status},{customerId:'c',total:500,status}])
  invoices.push({customerId:'other',total:10000,status:'issued'})
