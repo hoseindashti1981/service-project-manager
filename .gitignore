@@ -29,3 +29,6 @@ dist-ssr
 
 # Browser test artifacts
 test-results/
+
+# Local hosting deployment bundles
+lineyar-pm-deploy-*.zip

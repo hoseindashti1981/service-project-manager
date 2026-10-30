@@ -1,7 +1,7 @@
 import {savePayment,deletePayment} from './payment-mutations'
 import { requireDate } from '@/lib/dates'
 import { db } from '@/db/db'
-import { readAccount } from './account-repository'
+import { readAccountingTotals, readProjectFinancialPosition } from './accounting-repository'
 import type { CreateInvoiceInput,CreateQuotationInput,Invoice,Quotation } from '@/domain/finance/types'
 const money=(n:number)=>{if(!Number.isSafeInteger(n)||n<0)throw Error('مبلغ باید صحیح و نامنفی باشد.');return n}
 async function links(customerId:string,projectId?:string){if(!await db.customers.get(customerId))throw Error('مشتری یافت نشد.');if(projectId&&(await db.projects.get(projectId))?.customerId!==customerId)throw Error('پروژه متعلق به مشتری نیست.')}
@@ -27,5 +27,5 @@ export const financeRepository={
  async voidInvoice(id:string,reason?:string){const old=await db.invoices.get(id);if(!old)throw Error('فاکتور یافت نشد.');if(!reason?.trim())throw Error('دلیل ابطال لازم است.');const next={...old,status:'void' as const,voidReason:reason,updatedAt:Date.now()};await db.invoices.put(next);return next},
  createPayment:savePayment,updatePayment:savePayment,deletePayment,
  getQuotations:()=>db.quotations.orderBy('createdAt').reverse().toArray(),getInvoices:()=>db.invoices.orderBy('createdAt').reverse().toArray(),getPayments:()=>db.payments.orderBy('date').reverse().toArray(),
- balanceForProject:async(id:string)=>(await readAccount(id)).balance,balanceForCustomer:async(id:string)=>(await readAccount(undefined,id)).balance,
+ balanceForProject:async(id:string)=>(await readProjectFinancialPosition(id)).balance,balanceForCustomer:async(id:string)=>(await readAccountingTotals(id)).balance,
 }

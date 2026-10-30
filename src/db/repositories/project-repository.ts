@@ -3,7 +3,7 @@ import { projectDates, statusHistory, validateProjectDates, validateWorkflowChro
 import { newProjectStatuses } from '@/domain/project/status'
 import { db } from '@/db/db'
 import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '@/domain/project/types'
-import { projectBaseAmount,projectItemsTotal } from '@/domain/finance/account'
+import { projectItemsTotal } from '@/domain/finance/account'
 import type { ID } from '@/types'
 
 function generateId(): string {
@@ -115,10 +115,11 @@ export const projectRepository = {
     }
 
     validateAmounts(updated)
-    const [projectItems,projectChanges,projectActivities]=await Promise.all([db.projectItems.where('projectId').equals(id).toArray(),db.projectChanges.where('projectId').equals(id).toArray(),db.projectActivities.where('projectId').equals(id).toArray()])
+    const [projectItems,projectChanges]=await Promise.all([db.projectItems.where('projectId').equals(id).toArray(),db.projectChanges.where('projectId').equals(id).toArray()])
     const extras=projectChanges.reduce((s,c)=>s+c.amount,0)
     if(updated.pricingMode==='itemized'&&existing.pricingMode!=='itemized'&&updated.initialEstimateAmount===undefined)updated.initialEstimateAmount=projectItemsTotal(id,projectItems)
-    if((updated.discount??0)>projectBaseAmount(updated,projectItems,projectActivities)+extras)throw Error('تخفیف بیش از مبلغ پایه پروژه و کار اضافه است.')
+    const currentEstimate=updated.pricingMode==='itemized'?projectItemsTotal(id,projectItems):updated.contractAmount??0
+    if((updated.discount??0)>currentEstimate+extras)throw Error('تخفیف بیش از برآورد فعلی و کار اضافه است.')
     validateProjectDates(updated, !!existing.statusHistory?.length)
     if (JSON.stringify(projectDates(existing)) !== JSON.stringify(projectDates(updated))) {
       const activities = await db.projectActivities.where('projectId').equals(id).toArray()

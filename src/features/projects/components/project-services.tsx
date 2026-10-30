@@ -3,7 +3,7 @@ import {ServicePicker} from '@/components/service-picker'
 import { liveQuery } from 'dexie'
 import { activityRepository } from '@/db/repositories/activity-repository'
 import type { ProjectActivity } from '@/domain/activity/types'
-import { serviceProgress } from '@/domain/activity/progress'
+import { overallServicePercent, serviceProgress } from '@/domain/activity/progress'
 import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, formatDateFa } from '@/lib/dates'
 import { useEffect, useState, type FormEvent } from 'react'
@@ -71,7 +71,7 @@ export function ProjectServices({ projectId }: { projectId: string }) {
   const field = 'w-full rounded-lg border border-slate-300 p-2'
   const total=items.reduce((sum,item)=>sum+item.totalPrice,0)
   return <section className="space-y-4 rounded-2xl border bg-white p-4">
-    <button type="button" aria-expanded={open} className="min-h-11 font-bold w-full text-right" onClick={()=>setOpen(!open)}>خدمات پروژه و قیمت‌ها — {items.length.toLocaleString("fa-IR")} خدمت · {items.length ? Math.round(items.reduce((s,item)=>s+serviceProgress(item,activities).percent,0)/items.length) : 0}٪ میانگین پیشرفت</button>
+    <button type="button" aria-expanded={open} className="min-h-11 font-bold w-full text-right" onClick={()=>setOpen(!open)}>خدمات پروژه و قیمت‌ها — {items.length.toLocaleString("fa-IR")} خدمت · {overallServicePercent(items, activities).toLocaleString('fa-IR')}٪ میانگین پیشرفت</button>
     {open && <>
     <p className="text-xs text-slate-500">{project?.pricingMode==='itemized'?'تا پیش از فعالیت مبلغ‌دار، جمع خدمات مبلغ پایه است؛ پس از آن جمع کارکرد واقعی فعالیت‌ها جایگزین می‌شود.':'تا پیش از فعالیت مبلغ‌دار، توافق اولیه مبلغ پایه است؛ پس از آن جمع کارکرد واقعی فعالیت‌ها جایگزین می‌شود.'}</p>
     {project?.pricingMode==='itemized'&&<div className="rounded-xl bg-amber-50 p-3 text-sm"><p>برآورد اولیه: {project.initialEstimateAmount===undefined?'ثبت نشده':formatMoney(project.initialEstimateAmount)}</p><button type="button" disabled={busy} className="mt-2 min-h-11 rounded-lg border border-amber-300 px-3" onClick={async()=>{if(project.initialEstimateAmount!==undefined&&!confirm('برآورد اولیه با جمع فعلی خدمات جایگزین شود؟'))return;setBusy(true);try{await db.projects.update(projectId,{initialEstimateAmount:total,updatedAt:Date.now()})}finally{setBusy(false)}}}>ثبت جمع فعلی به‌عنوان برآورد اولیه</button></div>}

@@ -8,7 +8,7 @@ async function load(relative) {
  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
 }
 const { isoToJalali, jalaliToIso, jalaliMonthDays, toISODate, requireDate } = await load('../src/lib/dates.ts')
-const { serviceProgress } = await load('../src/domain/activity/progress.ts')
+const { overallServicePercent, serviceProgress } = await load('../src/domain/activity/progress.ts')
 test('Persian leap-day and Nowruz round-trip with the same calendar', () => {
  assert.equal(jalaliToIso({ year: 1403, month: 12, day: 30 }), '2025-03-20')
  assert.deepEqual(isoToJalali('2025-03-21'), { year: 1404, month: 1, day: 1 })
@@ -33,4 +33,7 @@ test('service progress includes past activity and recomputes after edits/removal
  assert.equal(serviceProgress(item, [activity]).remaining, 7.5)
  assert.deepEqual(serviceProgress(item, [{ ...activity, quantity: 12 }]), { completed: 12, remaining: 0, extra: 2, percent: 100 })
  assert.equal(serviceProgress(item, []).completed, 0)
+ assert.deepEqual(serviceProgress({ ...item, quantity: 100 }, [{ ...activity, quantity: 99.6 }]), { completed: 99.6, remaining: 0.4, extra: 0, percent: 99.6 })
+ assert.equal(overallServicePercent([{ ...item, quantity: 100 }], [{ ...activity, quantity: 99.6 }]), 99.6)
+ assert.equal(overallServicePercent([item, { ...item, id: 'b' }], [{ ...activity, quantity: 10 }, { ...activity, projectItemId: 'b', quantity: 9.99 }]), 99.9)
 })

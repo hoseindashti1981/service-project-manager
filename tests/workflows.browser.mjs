@@ -36,12 +36,12 @@ try {
   const { activityRepository } = await import('/src/db/repositories/activity-repository.ts')
   const input = { projectId: projects[2].id, projectItemId: item.id, unit: 'meter', quantity: 1, date: '2025-03-20', title: 'invalid test' }
   const results = []
-  for (const update of [{ projectId: projects[0].id }, { unit: 'piece' }, { quantity: -1 }, { date: '2025-02-30' }]) {
+  for (const update of [{ projectId: projects[0].id }, { unit: 'piece' }, { quantity: -1 }, { date: '2025-02-30' }, { quantity: 11 }]) {
    try { await activityRepository.create({ ...input, ...update }); results.push(false) } catch { results.push(true) }
   }
   return results
  }, fixture)
- assert.deepEqual(invalidLinks, [true, true, true, true])
+ assert.deepEqual(invalidLinks, [true, true, true, true, true])
  console.log('Created isolated fixtures; invalid project/service links and dates rejected')
  await go('/projects/new')
  await page.getByPlaceholder('مثال: پروژه مهرویلا').fill('پروژه با تاریخ گذشته')
@@ -64,6 +64,16 @@ try {
  assert.match(await page.locator('main').innerText(), /باقی‌مانده: ۷٫۵/)
  let stored = await page.evaluate(async () => (await (await import('/src/db/db.ts')).db.projectActivities.toArray())[0])
  assert.equal(stored.date, '2025-03-20'); assert.equal(stored.quantity, 2.5); assert.equal(stored.projectItemId, fixture.item.id); assert.equal(stored.unit, 'meter')
+ await page.getByRole('button', { name: 'فعالیت جدید', exact: true }).click()
+ await page.getByLabel('پروژه و مشتری', { exact: true }).selectOption(fixture.projects[2].id)
+ await page.getByLabel('خدمت پروژه', { exact: true }).selectOption(fixture.item.id)
+ await page.getByRole('button', { name: 'راهنمای مقدار خدمت', exact: true }).click()
+ assert.match(await page.locator('main').innerText(), /مقدار ثبت‌شده برای خدمت: ۱۰ متر/)
+ assert.match(await page.locator('main').innerText(), /باقی‌مانده خدمت: ۷٫۵/)
+ await page.getByLabel(/مقدار انجام‌شده/).fill('۸')
+ await page.getByRole('button', { name: 'ثبت فعالیت', exact: true }).click()
+ assert.match(await page.getByRole('alert').innerText(), /حداکثر مقدار قابل ثبت ۷٫۵/)
+ await page.getByRole('button', { name: 'انصراف', exact: true }).click()
  await page.getByRole('button', { name: 'ویرایش', exact: true }).click()
  await page.getByLabel('دلیل اصلاح یا ثبت دیرهنگام', { exact: true }).fill('اصلاح مقدار آزمون')
  await page.getByLabel(/مقدار انجام‌شده/).fill('۴')
@@ -86,13 +96,13 @@ try {
  await go('/reminders')
  assert.match(await page.locator('form select').last().innerText(), /پروژه in_progress — مشتری آزمون/)
  await go('/finance')
- for (const [button, table] of [['پیش‌فاکتور','quotations'], ['فاکتور','invoices'], ['پرداخت','payments']]) {
+ for (const [button, table] of [['پیش‌فاکتور جدید','quotations'], ['فاکتور جدید','invoices'], ['ثبت دریافت','payments']]) {
   await page.getByRole('button', { name: button, exact: true }).click()
   await page.locator('select[name="customerId"]').selectOption(fixture.customer.id)
-  await setDate('تاریخ سند', 1403, 12, 30)
+  await setDate(table === 'payments' ? 'تاریخ دریافت' : 'تاریخ سند', 1403, 12, 30)
   if (table === 'payments') await page.getByLabel('مبلغ پرداخت', { exact: true }).fill('100')
   else { await page.locator('input[name="description"]').fill('خدمت آزمایشی'); await page.getByLabel('قیمت واحد (تومان)', { exact: true }).fill('100') }
-  await page.getByRole('button', { name: table==='payments'?'ذخیره':'ذخیره و پیش‌نمایش', exact: true }).click()
+  await page.getByRole('button', { name: table==='payments'?'ذخیره دریافت':'ذخیره و پیش‌نمایش', exact: true }).click()
   await page.locator('form').waitFor({ state: 'hidden' })
   assert.equal(await page.evaluate(async (table) => (await (await import('/src/db/db.ts')).db.table(table).toArray())[0].date, table), '2025-03-20')
   if(table!=='payments')await page.getByRole('button',{name:'بازگشت',exact:true}).click()

@@ -37,7 +37,7 @@ export const activityRepository = {
       if (!options.reason?.trim()) throw new Error('دلیل اصلاح فعالیت را وارد کنید.')
       if (input.projectId !== undefined && input.projectId !== existing.projectId) throw new Error('پروژه فعالیت قبلی قابل تغییر نیست؛ فعالیت را با ثبت دلیل حذف و در پروژه صحیح ثبت کنید.')
       const updated = { ...existing, ...input, title: input.title?.trim() ?? existing.title, updatedAt: Date.now() }
-      await validateActivity(updated)
+      await validateActivity(updated, id)
       const project = await db.projects.get(updated.projectId)
       if (!project) throw new Error('پروژه یافت نشد.')
       validateExecutionEntry(project, updated.date, !!options.historical, options.reason, existing.date)
@@ -61,7 +61,7 @@ async function audit(projectId: string, entry: ActivityAuditEntry) {
   if (!project) throw new Error('پروژه یافت نشد.')
   await db.projects.update(projectId, { activityAudit: [...(project.activityAudit || []), entry], updatedAt: Date.now() })
 }
-async function validateActivity(input: CreateProjectActivityInput) {
+async function validateActivity(input: CreateProjectActivityInput, excludedActivityId?: ID) {
   requireDate(input.date)
   if (input.amount !== undefined && (!Number.isSafeInteger(input.amount) || input.amount < 0)) throw new Error('مبلغ اختیاری باید عدد صحیح و نامنفی به تومان باشد.')
   if (!input.title.trim()) throw new Error('عنوان فعالیت را وارد کنید.')
@@ -70,5 +70,13 @@ async function validateActivity(input: CreateProjectActivityInput) {
     const item = await db.projectItems.get(input.projectItemId)
     if (!item || item.projectId !== input.projectId) throw new Error('خدمت انتخاب‌شده متعلق به این پروژه نیست.')
     if (input.unit !== item.unit) throw new Error('واحد فعالیت باید با خدمت پروژه یکسان باشد.')
+    if (input.quantity !== undefined) {
+      const activities = await db.projectActivities.where('projectId').equals(input.projectId).toArray()
+      const completed = activities
+        .filter((activity) => activity.id !== excludedActivityId && activity.projectItemId === item.id && activity.unit === item.unit)
+        .reduce((sum, activity) => sum + (Number.isFinite(activity.quantity) && (activity.quantity ?? 0) > 0 ? activity.quantity! : 0), 0)
+      const remaining = Math.max(0, Math.round((item.quantity - completed) * 1e6) / 1e6)
+      if (input.quantity - remaining > 1e-6) throw new Error(`مقدار فعالیت از باقی‌مانده خدمت بیشتر است. حداکثر مقدار قابل ثبت ${remaining.toLocaleString('fa-IR')} است.`)
+    }
   }
 }

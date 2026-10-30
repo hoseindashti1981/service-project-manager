@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react'
 import {liveQuery} from 'dexie'
 import {db} from '@/db/db'
-import {serviceProgress} from '@/domain/activity/progress'
+import {overallServicePercent} from '@/domain/activity/progress'
 
 export function ProjectProgress({projectId}: {projectId: string}) {
   const [percent, setPercent] = useState<number | null>(null)
@@ -11,7 +11,7 @@ export function ProjectProgress({projectId}: {projectId: string}) {
         db.projectItems.where('projectId').equals(projectId).toArray(),
         db.projectActivities.where('projectId').equals(projectId).toArray(),
       ])
-      return items.length ? Math.round(items.reduce((sum, item) => sum + serviceProgress(item, activities).percent, 0) / items.length) : 0
+      return overallServicePercent(items, activities)
     }).subscribe({next: setPercent, error: () => setPercent(null)})
     return () => subscription.unsubscribe()
   }, [projectId])

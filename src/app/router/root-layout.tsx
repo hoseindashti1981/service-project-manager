@@ -14,7 +14,7 @@ const navigation = [
   { to: '/projects', label: 'پروژه‌ها', icon: FolderKanban },
   { to: '/customers', label: 'مشتری‌ها', icon: Users },
   { to: '/activities/today', label: 'فعالیت امروز', icon: ClipboardList },
-  { to: '/finance', label: 'مالی', icon: WalletCards },
+  { to: '/finance', label: 'حسابداری', icon: WalletCards },
   { to: '/reports', label: 'گزارش‌ها', icon: BarChart3 },
   { to: '/calendar', label: 'تقویم کارها', icon: CalendarDays },
   { to: '/reminders', label: 'یادآوری‌ها', icon: Bell },

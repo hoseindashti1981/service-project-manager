@@ -60,6 +60,9 @@ export const projectItemRepository = {
     if (input.unit !== undefined && input.unit !== existing.unit && await db.projectActivities.where('projectItemId').equals(id).count()) throw new Error('واحد خدمت دارای فعالیت ثبت‌شده قابل تغییر نیست.')
     const quantity = input.quantity ?? existing.quantity
     const unitPrice = input.unitPrice ?? existing.unitPrice
+    const completed = (await db.projectActivities.where('projectItemId').equals(id).toArray())
+      .reduce((sum, activity) => sum + (activity.unit === existing.unit && Number.isFinite(activity.quantity) && (activity.quantity ?? 0) > 0 ? activity.quantity! : 0), 0)
+    if (completed - quantity > 1e-6) throw new Error(`مقدار کل خدمت نمی‌تواند کمتر از ${completed.toLocaleString('fa-IR')} مقدار انجام‌شده باشد.`)
 
     const updated: ProjectItem = {
       ...existing,

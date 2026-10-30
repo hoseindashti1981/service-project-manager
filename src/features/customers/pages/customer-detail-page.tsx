@@ -117,7 +117,7 @@ export function CustomerDetailPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg"><AccountCard customerId={customerId} title="حساب مشتری"/><CustomerProjects customerId={customerId}/>
+    <div className="max-w-4xl space-y-6"><AccountCard customerId={customerId} title="حساب مشتری"/><CustomerProjects customerId={customerId}/>
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-800">ویرایش مشتری</h2>
         <button

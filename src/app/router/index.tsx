@@ -32,7 +32,18 @@ const projectsNewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/
 const projectDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/projects/$projectId', component: ProjectDetailPage })
 const projectGalleryRoute=createRoute({getParentRoute:()=>rootRoute,path:'/projects/$projectId/photos',component:ProjectGalleryPage})
 const todayActivitiesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/activities/today', component: TodayActivitiesPage })
-const financeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/finance', component: FinancePage })
+const financeMetrics = ['forecastNet', 'earnedNet', 'unbilledEarned', 'invoiced', 'received', 'outstanding', 'credit', 'costs', 'earnedProfit', 'overdue', 'warnings'] as const
+const financeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/finance',
+  validateSearch: (search: Record<string, unknown>): { customerId?: string; projectId?: string; status?: string; metric?: (typeof financeMetrics)[number] } => ({
+    customerId: typeof search.customerId === 'string' && search.customerId ? search.customerId : undefined,
+    projectId: typeof search.projectId === 'string' && search.projectId ? search.projectId : undefined,
+    status: typeof search.status === 'string' && search.status ? search.status : undefined,
+    metric: financeMetrics.includes(search.metric as (typeof financeMetrics)[number]) ? search.metric as (typeof financeMetrics)[number] : undefined,
+  }),
+  component: FinancePage,
+})
 const reportsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reports', component: ReportsPage })
 const calendarRoute = createRoute({ getParentRoute: () => rootRoute, path: '/calendar', component: CalendarPage })
 const remindersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reminders', component: RemindersPage })

@@ -1,14 +1,14 @@
 {
   "name": "service-project-manager",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/workflows.browser.mjs && node tests/project-workflow.browser.mjs && node tests/backup.browser.mjs && node tests/contacts-diary.browser.mjs && node tests/lock.browser.mjs && node tests/dashboard-mobile.browser.mjs && node tests/manual-fixes.browser.mjs && node tests/mobile-followups.browser.mjs",
+    "test:browser": "node tests/workflows.browser.mjs && node tests/project-workflow.browser.mjs && node tests/backup.browser.mjs && node tests/contacts-diary.browser.mjs && node tests/lock.browser.mjs && node tests/dashboard-mobile.browser.mjs && node tests/manual-fixes.browser.mjs && node tests/mobile-followups.browser.mjs && node tests/accounting.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
