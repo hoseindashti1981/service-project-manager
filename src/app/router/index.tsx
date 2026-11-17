@@ -15,6 +15,7 @@ import { ProjectDetailPage } from '../../features/projects/pages/project-detail-
 import { TodayActivitiesPage } from '../../features/activities/pages/today-activities-page'
 import { FinancePage } from '../../features/finance/pages/finance-page'
 import { ReportsPage } from '../../features/reports/pages/reports-page'
+import { ProjectWorkReportPage } from '../../features/reports/pages/project-work-report-page'
 import { CalendarPage } from '../../features/calendar/pages/calendar-page'
 import { RemindersPage } from '../../features/reminders/pages/reminders-page'
 import { ServicesPage } from '../../features/services/pages/services-page'
@@ -45,6 +46,15 @@ const financeRoute = createRoute({
   component: FinancePage,
 })
 const reportsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reports', component: ReportsPage })
+const projectWorkReportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reports/project-work',
+  validateSearch: (search: Record<string, unknown>): { customerId?: string; projectId?: string } => ({
+    customerId: typeof search.customerId === 'string' && search.customerId ? search.customerId : undefined,
+    projectId: typeof search.projectId === 'string' && search.projectId ? search.projectId : undefined,
+  }),
+  component: ProjectWorkReportPage,
+})
 const calendarRoute = createRoute({ getParentRoute: () => rootRoute, path: '/calendar', component: CalendarPage })
 const remindersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reminders', component: RemindersPage })
 const servicesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/services', component: ServicesPage })
@@ -52,7 +62,7 @@ const servicesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ser
 const routeTree = rootRoute.addChildren([
   settingsRoute,helpRoute,
   indexRoute, dbTestRoute, customersRoute, customersNewRoute, customerDetailRoute,
-  projectsRoute, projectsNewRoute, projectDetailRoute, projectGalleryRoute, todayActivitiesRoute, financeRoute, reportsRoute, calendarRoute, remindersRoute, servicesRoute,
+  projectsRoute, projectsNewRoute, projectDetailRoute, projectGalleryRoute, todayActivitiesRoute, financeRoute, reportsRoute, projectWorkReportRoute, calendarRoute, remindersRoute, servicesRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL === '/'

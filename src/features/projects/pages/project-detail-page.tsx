@@ -7,7 +7,7 @@ import { JalaliDatePicker } from '@/components/jalali-date-picker'
 import { toISODate, requireDate } from '@/lib/dates'
 import { ProjectServices } from '../components/project-services'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { projectRepository } from '@/db/repositories/project-repository'
 import { customerRepository } from '@/db/repositories/customer-repository'
 import type { Project,ProjectPricingMode } from '@/domain/project/types'
@@ -171,8 +171,9 @@ export function ProjectDetailPage() {
       </div>
 
       {project && (
-        <div className="text-xs text-slate-400">
-          تاریخ پروژه: {formatDateFa(project.startDate || project.createdAt)}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs text-slate-400">تاریخ پروژه: {formatDateFa(project.startDate || project.createdAt)}</div>
+          <Link to="/reports/project-work" search={{ customerId: project.customerId, projectId: project.id }} className="inline-flex min-h-11 items-center rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-700">📅 گزارش کار این پروژه</Link>
         </div>
       )}
 
